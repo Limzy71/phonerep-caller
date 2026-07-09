@@ -126,7 +126,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Secara default, Android emulator mengakses localhost via http://10.0.2.2:3000. Jika menjalankan di perangkat nyata dalam satu Wi-Fi atau lingkungan desktop, sesuaikan di bawah ini.',
+                        'Jika menjalankan di perangkat HP nyata (via Wi-Fi/USB), gunakan IP PC (contoh: http://192.168.1.15:3000). Untuk emulator Android gunakan http://10.0.2.2:3000.',
                         style: GoogleFonts.outfit(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -140,7 +140,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               controller: _urlController,
                               style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
                               decoration: const InputDecoration(
-                                hintText: 'http://10.0.2.2:3000',
+                                hintText: 'http://192.168.1.15:3000',
                                 prefixIcon: Icon(Icons.link, size: 18),
                                 isDense: true,
                               ),
@@ -171,10 +171,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
+                          _buildQuickUrlChip('http://192.168.1.15:3000', 'HP Nyata (Wi-Fi/USB)'),
                           _buildQuickUrlChip('http://10.0.2.2:3000', 'Emulator Android'),
-                          const SizedBox(width: 8),
                           _buildQuickUrlChip('http://localhost:3000', 'Localhost PC'),
                         ],
                       ),

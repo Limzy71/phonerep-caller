@@ -8,10 +8,10 @@ class ApiService extends ChangeNotifier {
   late String _baseUrl;
 
   ApiService() {
-    // If running on Android, default to 10.0.2.2 which maps to host PC localhost.
-    // Otherwise (Windows, iOS, Web), default to localhost:3000.
+    // If running on Android (e.g., real device via USB/Wi-Fi), default to local IP.
+    // Can also be switched to http://10.0.2.2:3000 for emulator via Analytics screen settings.
     if (!kIsWeb && Platform.isAndroid) {
-      _baseUrl = 'http://10.0.2.2:3000';
+      _baseUrl = 'http://192.168.1.15:3000';
     } else {
       _baseUrl = 'http://localhost:3000';
     }
