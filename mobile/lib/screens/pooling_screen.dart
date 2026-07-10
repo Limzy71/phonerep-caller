@@ -22,7 +22,7 @@ class _PoolingScreenState extends State<PoolingScreen> {
   SyncContactResult? _lastSyncResult;
   String? _errorMessage;
 
-  // Toggle states ala GetContact
+  // Toggle states struktur perisai
   bool _isDefaultPhoneApp = true;
   bool _isOverlayAllowed = true;
 
@@ -63,7 +63,7 @@ class _PoolingScreenState extends State<PoolingScreen> {
           builder: (ctx) => AlertDialog(
             backgroundColor: AppColors.cardBgElevated,
             title: Text('Izin Kontak Dibutuhkan', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-            content: Text('Anda telah menolak izin kontak secara permanen. Buka Pengaturan Android untuk mengaktifkan izin kontak demi keamanan komunitas.', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+            content: Text('Anda telah menolak izin kontak secara permanen. Buka Pengaturan Android untuk mengaktifkan izin kontak demi keamanan komunitas PhoneRep.', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -182,7 +182,7 @@ class _PoolingScreenState extends State<PoolingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar Pencarian ala GetContact
+            // Top Bar struktur kapsul rapi
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               color: const Color(0xFF131824),
@@ -190,23 +190,23 @@ class _PoolingScreenState extends State<PoolingScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      height: 44,
+                      height: 48,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1F2637),
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFF2E384D), width: 1),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: Colors.white60, size: 20),
+                          const Icon(Icons.shield_outlined, color: AppColors.primaryLight, size: 22),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Pencarian berdasarkan nomor',
-                              style: GoogleFonts.outfit(color: Colors.white60, fontSize: 14),
+                              'Pengaturan Perlindungan & Pooling',
+                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                             ),
                           ),
-                          const Icon(Icons.account_circle_outlined, color: Colors.white70, size: 24),
                         ],
                       ),
                     ),
@@ -224,7 +224,7 @@ class _PoolingScreenState extends State<PoolingScreen> {
                     // Kartu 1: Selalu ketahui siapa yang menelepon Anda
                     _buildBlueToggleCard(
                       title: 'Selalu ketahui siapa yang menelepon Anda.',
-                      subtitle: 'Atur PhoneRep sebagai aplikasi telepon default sehingga PhoneRep dapat mengidentifikasi panggilan masuk untuk melindungi Anda dari panggilan spam.',
+                      subtitle: 'Atur PhoneRep sebagai aplikasi telepon default sehingga sistem dapat mengidentifikasi panggilan masuk untuk melindungi Anda dari panggilan spam.',
                       value: _isDefaultPhoneApp,
                       onChanged: (v) => setState(() => _isDefaultPhoneApp = v),
                     ),
@@ -233,122 +233,31 @@ class _PoolingScreenState extends State<PoolingScreen> {
                     // Kartu 2: Izinkan untuk ditampilkan pada layar
                     _buildBlueToggleCard(
                       title: 'Izinkan untuk ditampilkan pada layar',
-                      subtitle: 'Saat nomor tidak dikenal menelepon, kartu ID penelepon akan muncul di layar Anda secara otomatis.',
+                      subtitle: 'Saat nomor tidak dikenal menelepon, kartu reputasi penelepon akan muncul di layar Anda secara otomatis.',
                       value: _isOverlayAllowed,
                       onChanged: (v) => setState(() => _isOverlayAllowed = v),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
-                    // ID Penelepon untuk Panggilan Internet ala GetContact
+                    // Bagian Contact Pooling Sekali Klik (Struktur Bersih Tanpa Data Palsu)
                     Text(
-                      'ID Penelepon untuk Panggilan Internet',
+                      'Sinkronisasi Buku Alamat Komunitas',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF0096C7),
-                            Color(0xFF10B981),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.25),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.person_rounded, color: Colors.white, size: 34),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Budi Suhardi',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '+62-898-555-775',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Panggilan...',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0088CC),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF25D366),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.call_rounded, color: Colors.white, size: 18),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Lihat ID penelepon untuk “panggilan tak dikenal” panggilan internet WhatsApp dan Telegram.',
-                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Bagian Contact Pooling Sekali Klik Ala GetContact
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF182030),
-                        borderRadius: BorderRadius.circular(20),
+                        color: const Color(0xFF131824),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                           color: _lastSyncResult != null
                               ? AppColors.accentGreen.withValues(alpha: 0.6)
-                              : AppColors.primaryLight.withValues(alpha: 0.4),
+                              : const Color(0xFF2E384D),
                         ),
                       ),
                       child: Column(
@@ -359,13 +268,13 @@ class _PoolingScreenState extends State<PoolingScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: (_lastSyncResult != null ? AppColors.accentGreen : AppColors.primaryLight)
+                                  color: (_lastSyncResult != null ? AppColors.accentGreen : const Color(0xFF007AFF))
                                       .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Icon(
                                   _lastSyncResult != null ? Icons.cloud_done_rounded : Icons.sync_rounded,
-                                  color: _lastSyncResult != null ? AppColors.accentGreen : AppColors.primaryLight,
+                                  color: _lastSyncResult != null ? AppColors.accentGreen : const Color(0xFF2B8CFF),
                                   size: 26,
                                 ),
                               ),
@@ -382,13 +291,15 @@ class _PoolingScreenState extends State<PoolingScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       _lastSyncResult != null
                                           ? '✔ Tersinkronisasi (+${_lastSyncResult!.syncedCount} nomor)'
-                                          : '${_contacts.length} Nomor siap memperkaya proteksi',
+                                          : '${_contacts.length} Nomor terdeteksi di perangkat ini',
                                       style: GoogleFonts.outfit(
                                         color: _lastSyncResult != null ? AppColors.accentGreen : AppColors.accentCyan,
                                         fontSize: 13,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
@@ -400,16 +311,16 @@ class _PoolingScreenState extends State<PoolingScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           Text(
-                            'Dengan menyinkronkan buku alamat secara otomatis, Anda membantu seluruh pengguna mengenali nomor kurir, penipu, dan nomor penting tanpa menampilkan riwayat pribadi.',
-                            style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                            'Dengan menyinkronkan buku alamat secara otomatis, Anda berkontribusi memperkuat proteksi PhoneRep untuk mengenali nomor kurir, penipu, dan nomor penting tanpa membeberkan riwayat pribadi Anda.',
+                            style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.45),
                           ),
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 12),
                             Text(_errorMessage!, style: GoogleFonts.outfit(color: AppColors.accentRed, fontSize: 12)),
                           ],
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
