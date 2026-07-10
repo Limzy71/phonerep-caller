@@ -18,7 +18,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -47,11 +47,20 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkAndLoadContacts();
       }
     });
+  }
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _hasCallLogPermission) {
+      _fetchRealCallLogs(showFeedback: false);
+    }
   }
 
   Future<void> _checkAndLoadContacts() async {
@@ -112,16 +121,37 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<void> _fetchRealCallLogs() async {
+  Future<void> _fetchRealCallLogs({bool showFeedback = false}) async {
     try {
+      if (showFeedback && mounted) {
+        setState(() => _isContactsLoading = true);
+      }
       final Iterable<CallLogEntry> entries = await CallLog.get();
       if (mounted) {
         setState(() {
           _callLogs = entries.where((e) => (e.number ?? '').trim().isNotEmpty).toList();
+          if (showFeedback) {
+            _isContactsLoading = false;
+          }
         });
+        if (showFeedback) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Riwayat panggilan berhasil diperbarui (${_callLogs.length} panggilan terdeteksi)',
+                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
-      // Abaikan jika gagal mengakses log
+      if (showFeedback && mounted) {
+        setState(() => _isContactsLoading = false);
+      }
     }
   }
 
@@ -318,6 +348,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -813,7 +844,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 if (_hasCallLogPermission)
                   InkWell(
-                    onTap: _fetchRealCallLogs,
+                    onTap: () => _fetchRealCallLogs(showFeedback: true),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -953,54 +984,65 @@ class _SearchScreenState extends State<SearchScreen> {
                 );
               }),
             const SizedBox(height: 16),
-            Center(
-              child: TextButton.icon(
-                onPressed: _contacts.isNotEmpty ? () {
-                  // Munculkan dialog daftar seluruh kontak nyata
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: const Color(0xFF141926),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      title: Text('Semua Kontak Asli (${_contacts.length})', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                      content: SizedBox(
-                        width: double.maxFinite,
-                        height: 400,
-                        child: ListView.builder(
-                          itemCount: _contacts.length,
-                          itemBuilder: (ctx, idx) {
-                            final c = _contacts[idx];
-                            final name = _getContactName(c);
-                            final num = c.phones.first.number;
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(name, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
-                              subtitle: Text(num, style: GoogleFonts.outfit(color: AppColors.textSecondary)),
-                              onTap: () {
-                                Navigator.pop(ctx);
-                                _searchController.text = num;
-                                _performSearch(num);
-                              },
-                            );
-                          },
+            if (_callLogs.isNotEmpty)
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    // Munculkan dialog daftar seluruh riwayat panggilan nyata
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFF141926),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: Text('Semua Riwayat Panggilan (${_callLogs.length})', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                        content: SizedBox(
+                          width: double.maxFinite,
+                          height: 400,
+                          child: ListView.builder(
+                            itemCount: _callLogs.length,
+                            itemBuilder: (ctx, idx) {
+                              final e = _callLogs[idx];
+                              final num = (e.number ?? '').trim();
+                              if (num.isEmpty) return const SizedBox.shrink();
+                              String display = (e.name ?? '').trim();
+                              if (display.isEmpty && _contacts.isNotEmpty) {
+                                final match = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(RegExp(r'\D'), '').endsWith(num.replaceAll(RegExp(r'\D'), '')))).firstOrNull;
+                                if (match != null) {
+                                  display = _getContactName(match);
+                                }
+                              }
+                              if (display.isEmpty) display = num;
+
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(display, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+                                subtitle: Text('$num (${_formatCallType(e.callType)})', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+                                trailing: Text(_formatCallLogDate(e.timestamp), style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _searchController.text = num;
+                                  _performSearch(num);
+                                },
+                              );
+                            },
+                          ),
                         ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text('Tutup', style: GoogleFonts.outfit(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: Text('Tutup', style: GoogleFonts.outfit(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  );
-                } : _requestContactPermission,
-                icon: Text(
-                  _contacts.isNotEmpty ? 'Tampilkan Semuanya (${_contacts.length} Kontak)' : 'Tampilkan Semuanya',
-                  style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.w600),
+                    );
+                  },
+                  icon: Text(
+                    'Tampilkan Semua Riwayat Panggilan (${_callLogs.length})',
+                    style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.w600),
+                  ),
+                  label: const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B8CFF), size: 18),
                 ),
-                label: const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B8CFF), size: 18),
               ),
-            ),
             const SizedBox(height: 30),
 
             // -------------------------------------------------------------
