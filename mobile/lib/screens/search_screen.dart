@@ -26,9 +26,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Default search example on load for immediate WOW effect
-    _searchController.text = '081234567890';
-    _performSearch('081234567890');
   }
 
   Future<void> _performSearch(String query) async {
@@ -335,24 +332,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      // Quick Presets
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            Text(
-                              'Preset Cepat:',
-                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
-                            ),
-                            const SizedBox(width: 8),
-                            _buildPresetChip('081234567890'),
-                            _buildPresetChip('+6281122334455'),
-                            _buildPresetChip('+18005550199'),
-                            _buildPresetChip('089988776655'),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 6),
                     ],
                   ),
                 ),
@@ -426,29 +406,34 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'NOMOR TELEPON TERDETEKSI',
-                                    style: GoogleFonts.outfit(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.1,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'NOMOR TELEPON TERDETEKSI',
+                                      style: GoogleFonts.outfit(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.1,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _phoneRecord!.phoneNumber,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _phoneRecord!.phoneNumber,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
@@ -485,20 +470,27 @@ class _SearchScreenState extends State<SearchScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.groups_rounded, color: AppColors.accentCyan, size: 22),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Tag & Ulasan Komunitas (${_phoneRecord!.tags.length})',
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.groups_rounded, color: AppColors.accentCyan, size: 22),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Tag & Ulasan (${_phoneRecord!.tags.length})',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             InkWell(
                               onTap: _showAddTagDialog,
                               borderRadius: BorderRadius.circular(12),
@@ -612,28 +604,4 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildPresetChip(String number) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: () {
-          _searchController.text = number;
-          _performSearch(number);
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.cardBgElevated,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Text(
-            number,
-            style: GoogleFonts.outfit(color: AppColors.primaryLight, fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-    );
-  }
 }
