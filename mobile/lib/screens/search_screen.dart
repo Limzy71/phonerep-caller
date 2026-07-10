@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/phone_record.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
@@ -22,8 +24,177 @@ class _SearchScreenState extends State<SearchScreen> {
   PhoneRecord? _phoneRecord;
   String? _statusMessage;
 
-  // Riwayat pencarian nyata yang dilakukan pengguna selama sesi aplikasi
+  // Riwayat pencarian nyata selama sesi
   final List<String> _searchHistory = [];
+
+  // State untuk pengaturan perlindungan di halaman Beranda
+  bool _isDefaultPhoneApp = true;
+  bool _isOverlayAllowed = true;
+
+  // State untuk sinkronisasi buku alamat (Contact Pooling) di halaman Beranda
+  bool _isSyncLoading = false;
+  bool _hasContactPermission = false;
+  List<Contact> _contacts = [];
+  SyncContactResult? _lastSyncResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkContactPermission();
+  }
+
+  Future<void> _checkContactPermission() async {
+    final status = await Permission.contacts.status;
+    if (mounted) {
+      setState(() {
+        _hasContactPermission = status.isGranted;
+      });
+    }
+    if (_hasContactPermission) {
+      _loadContacts();
+    }
+  }
+
+  Future<void> _requestContactPermission() async {
+    setState(() {
+      _isSyncLoading = true;
+      _errorMessage = null;
+    });
+
+    final status = await Permission.contacts.request();
+    if (mounted) {
+      setState(() {
+        _hasContactPermission = status.isGranted;
+        _isSyncLoading = false;
+      });
+    }
+
+    if (_hasContactPermission) {
+      await _loadContacts();
+    } else if (status.isPermanentlyDenied) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF1F2637),
+            title: Text('Izin Kontak Dibutuhkan', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+            content: Text('Anda telah menolak izin kontak secara permanen. Buka Pengaturan Android untuk mengaktifkan izin kontak demi memperkuat proteksi bersama.', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  openAppSettings();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF007AFF)),
+                child: Text('Buka Pengaturan', style: GoogleFonts.outfit(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadContacts() async {
+    setState(() {
+      _isSyncLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (await FlutterContacts.requestPermission(readonly: true)) {
+        final contacts = await FlutterContacts.getContacts(
+          withProperties: true,
+          withPhoto: false,
+        );
+        if (mounted) {
+          setState(() {
+            _contacts = contacts.where((c) => c.phones.isNotEmpty && _getContactName(c) != 'Kontak Komunitas').toList();
+            _isSyncLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _hasContactPermission = false;
+            _isSyncLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Gagal membaca kontak: $e';
+          _isSyncLoading = false;
+        });
+      }
+    }
+  }
+
+  String _getContactName(Contact c) {
+    if (c.displayName.trim().isNotEmpty) {
+      return c.displayName.trim();
+    }
+    final fullName = '${c.name.first} ${c.name.middle} ${c.name.last}'.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+    return 'Kontak Komunitas';
+  }
+
+  Future<void> _performContactSync() async {
+    if (_contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada kontak dengan nomor telepon untuk disinkronkan.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSyncLoading = true;
+      _errorMessage = null;
+      _lastSyncResult = null;
+    });
+
+    final payload = <Map<String, String>>[];
+    for (final c in _contacts) {
+      final rawNum = c.phones.first.number;
+      payload.add({
+        'name': _getContactName(c),
+        'phoneNumber': rawNum,
+      });
+    }
+
+    try {
+      final res = await widget.apiService.syncContacts(
+        payload,
+        userId: 'android_user_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      if (mounted) {
+        setState(() {
+          _lastSyncResult = res;
+          _isSyncLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res.message),
+            backgroundColor: AppColors.accentGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isSyncLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _performSearch(String query) async {
     final cleanQuery = query.trim();
@@ -205,7 +376,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar Pencarian dengan struktur kapsul rapi
+            // Top Bar Pencarian berstruktur kapsul
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               color: const Color(0xFF131824),
@@ -305,7 +476,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)))
                   : _phoneRecord == null
-                      ? _buildHomeIdleStructure()
+                      ? _buildUnifiedOnePageDashboard()
                       : _buildRealSearchResultStructure(),
             ),
           ],
@@ -314,8 +485,8 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Struktur Beranda bersih (tanpa data palsu/dummy)
-  Widget _buildHomeIdleStructure() {
+  // SATU HALAMAN TERPADU YANG MEMUAT KE-5 STRUKTUR (Gambar 1 sampai Gambar 5) DALAM 1 ALUR SCROLL
+  Widget _buildUnifiedOnePageDashboard() {
     return RefreshIndicator(
       color: const Color(0xFF007AFF),
       backgroundColor: const Color(0xFF1F2637),
@@ -328,16 +499,18 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian Riwayat Pencarian Nyata
+            // -------------------------------------------------------------
+            // STRUKTUR 1: Panggil / Pencarian Terbaru (Gambar 1)
+            // -------------------------------------------------------------
             Text(
-              'Riwayat Pencarian Anda',
+              'Riwayat Pencarian Terbaru',
               style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 12),
             if (_searchHistory.isEmpty)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
                   color: const Color(0xFF131824),
                   borderRadius: BorderRadius.circular(18),
@@ -345,17 +518,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.history_rounded, size: 40, color: Colors.white.withValues(alpha: 0.3)),
-                    const SizedBox(height: 10),
+                    Icon(Icons.history_rounded, size: 36, color: Colors.white.withValues(alpha: 0.3)),
+                    const SizedBox(height: 8),
                     Text(
-                      'Belum Ada Pencarian Terakhir',
+                      'Belum Ada Riwayat Pencarian',
                       style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 4),
                     Text(
-                      'Ketik nomor telepon di kotak atas untuk mengetahui reputasi, operator, dan tag dari komunitas PhoneRep.',
+                      'Coba ketik nomor di atas untuk melihat operator, reputasi spam, dan tag komunitas.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
                     ),
                   ],
                 ),
@@ -411,96 +583,411 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             const SizedBox(height: 28),
 
-            // Struktur Perlindungan & Keamanan PhoneRep Komunitas
+            // -------------------------------------------------------------
+            // STRUKTUR 2: Perlindungan dan Keamanan (Gambar 1 & Gambar 2)
+            // -------------------------------------------------------------
             Text(
-              'Perlindungan Komunitas PhoneRep',
+              'Perlindungan dan Keamanan',
               style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 14),
+            
+            // Gauge Meter Perlindungan (Dari struktur Gambar 1)
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: const Color(0xFF131824),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: const Color(0xFF1E2636)),
               ),
               child: Column(
                 children: [
+                  SizedBox(
+                    height: 110,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 180,
+                          height: 90,
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Color(0xFF10B981), width: 14),
+                              left: BorderSide(color: Color(0xFF10B981), width: 14),
+                              right: BorderSide(color: Color(0xFF334155), width: 14),
+                            ),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(90),
+                              topRight: Radius.circular(90),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 16),
+                            Text(
+                              'STATUS PROTEKSI',
+                              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                            ),
+                            Text(
+                              'Aktif & Aman',
+                              style: GoogleFonts.outfit(color: const Color(0xFF10B981), fontSize: 22, fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sistem identifikasi dan proteksi dari panggilan spam atau nomor berbahaya aktif bekerja di perangkat Anda.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(color: Colors.white60, fontSize: 13, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Toggle Pengaturan Perisai (Dari struktur Gambar 2)
+            _buildBlueToggleCard(
+              title: 'Selalu ketahui siapa yang menelepon Anda.',
+              subtitle: 'Atur PhoneRep sebagai aplikasi telepon default sehingga sistem dapat mengidentifikasi panggilan masuk untuk melindungi Anda dari panggilan spam.',
+              value: _isDefaultPhoneApp,
+              onChanged: (v) => setState(() => _isDefaultPhoneApp = v),
+            ),
+            const SizedBox(height: 14),
+            _buildBlueToggleCard(
+              title: 'Izinkan untuk ditampilkan pada layar',
+              subtitle: 'Saat nomor tidak dikenal menelepon, kartu reputasi penelepon akan muncul di layar Anda secara otomatis.',
+              value: _isOverlayAllowed,
+              onChanged: (v) => setState(() => _isOverlayAllowed = v),
+            ),
+            const SizedBox(height: 14),
+
+            // Kartu Sinkronisasi Buku Alamat (Pooling) nyata
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131824),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: _lastSyncResult != null ? AppColors.accentGreen.withValues(alpha: 0.6) : const Color(0xFF2E384D),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(16),
+                          color: (_lastSyncResult != null ? AppColors.accentGreen : const Color(0xFF007AFF)).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(Icons.shield_rounded, color: Colors.white, size: 32),
+                        child: Icon(
+                          _lastSyncResult != null ? Icons.cloud_done_rounded : Icons.sync_rounded,
+                          color: _lastSyncResult != null ? AppColors.accentGreen : const Color(0xFF2B8CFF),
+                          size: 24,
+                        ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Sistem Proteksi Crowdsourcing',
-                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                              'Sinkronisasi Buku Alamat (Pooling)',
+                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 4),
                             Text(
-                              'Terhubung ke database real-time PhoneRep Komunitas untuk mendeteksi penipuan & spam.',
-                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                              _lastSyncResult != null
+                                  ? '✔ Tersinkronisasi (+${_lastSyncResult!.syncedCount} nomor)'
+                                  : '${_contacts.length} Nomor terdeteksi di perangkat ini',
+                              style: GoogleFonts.outfit(
+                                color: _lastSyncResult != null ? AppColors.accentGreen : AppColors.accentCyan,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      IconButton(
+                        onPressed: _hasContactPermission ? _loadContacts : _requestContactPermission,
+                        icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Dengan menyinkronkan buku alamat, Anda membantu seluruh pengguna mengenali nomor kurir, penipu, dan nomor penting tanpa membeberkan riwayat pribadi Anda.',
+                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSyncLoading ? null : (_contacts.isEmpty ? _requestContactPermission : _performContactSync),
+                      icon: _isSyncLoading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.cloud_upload_rounded, size: 20),
+                      label: Text(
+                        _isSyncLoading
+                            ? 'MENGHUBUNGKAN...'
+                            : (_contacts.isEmpty ? 'BERI IZIN BUKU ALAMAT' : 'SINKRONISASI SEKARANG'),
+                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _lastSyncResult != null ? AppColors.accentGreen : const Color(0xFF007AFF),
+                        foregroundColor: _lastSyncResult != null ? Colors.black : Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // -------------------------------------------------------------
+            // STRUKTUR 3: Tag Saya & Rekomendasi (Gambar 3)
+            // -------------------------------------------------------------
+            Text(
+              'Tag & Label Komunitas',
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131824),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF1E2636)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tag yang Anda kontribusikan atau cari akan muncul sebagai label referensi:',
+                    style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildTagPill('Nomor Terverifikasi'),
+                      _buildTagPill('Kurir Resmi'),
+                      _buildTagPill('Layanan Pelanggan'),
+                      _buildTagPill('Rekan Komunitas'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Rekomendasi Perlindungan (Dari struktur Gambar 3)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF004085),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1F2637),
-                      borderRadius: BorderRadius.circular(14),
+                      color: const Color(0xFF0D253F),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildStatColumn('Fitur Utama', 'Cari & Tag'),
-                        Container(width: 1, height: 32, color: const Color(0xFF2E384D)),
-                        _buildStatColumn('Keamanan E.164', 'Aktif'),
-                        Container(width: 1, height: 32, color: const Color(0xFF2E384D)),
-                        _buildStatColumn('Akses Server', 'Online'),
+                        const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                        const SizedBox(width: 6),
+                        Text('Direkomendasikan', style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Perlindungan Identitas Panggilan',
+                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Saat menelepon kembali nomor yang tidak dikenal, selalu periksa reputasi skor dan ulasan tag di aplikasi terlebih dahulu.',
+                    style: GoogleFonts.outfit(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // -------------------------------------------------------------
+            // STRUKTUR 4: Kontak Cepat / Daftar Ulasan (Gambar 4)
+            // -------------------------------------------------------------
+            Text(
+              'Kontak & Tag Terpopuler Komunitas',
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131824),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF1E2636)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.groups_rounded, size: 42, color: Colors.white.withValues(alpha: 0.3)),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Cari Nomor Untuk Melihat Daftar Ulasan',
+                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Setiap nomor yang dicari akan menampilkan struktur avatar lingkaran, label nama, dan badge jumlah reputasi (# upvote) secara lengkap.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // -------------------------------------------------------------
+            // STRUKTUR 5: Info Pencarian / Status Panggilan (Gambar 5)
+            // -------------------------------------------------------------
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131824),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF1E2636)),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    child: const Icon(Icons.security_rounded, color: AppColors.primaryLight),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sistem Proteksi Komunitas Aktif',
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Identitas dan buku alamat Anda dilindungi dengan normalisasi E.164 berstandar tinggi.',
+                          style: GoogleFonts.outfit(color: Colors.white60, fontSize: 12, height: 1.35),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatColumn(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: GoogleFonts.outfit(color: AppColors.accentCyan, fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text(label, style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12)),
-      ],
+  Widget _buildTagPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF007AFF),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '# $text',
+        style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
-  // Struktur Detail Nomor Nyata (Hanya data dari server, tanpa data/iklan palsu)
+  Widget _buildBlueToggleCard({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2B8CFF),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2B8CFF).withValues(alpha: 0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: Colors.white,
+            activeTrackColor: const Color(0xFF0F172A),
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: const Color(0xFF1E293B),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tampilan Hasil Pencarian Nyata
   Widget _buildRealSearchResultStructure() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header nomor asli dari database
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -538,7 +1025,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Section Tag Komunitas Asli
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -595,7 +1081,6 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           const SizedBox(height: 28),
 
-          // Daftar Ulasan & Voting Tag (Struktur Kontak Cepat / Daftar Tag)
           Text(
             'Daftar Ulasan & Reputasi Komunitas',
             style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
