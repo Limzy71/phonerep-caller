@@ -16,70 +16,52 @@ class TagChipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.cardBgElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.8), width: 1),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.label_outline_rounded,
-              color: AppColors.primaryLight,
-              size: 20,
-            ),
+          Icon(
+            tag.isSpam ? Icons.warning_amber_rounded : Icons.local_offer_rounded,
+            color: tag.isSpam ? AppColors.accentRed : AppColors.accentCyan,
+            size: 18,
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  tag.labelName,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    tag.labelName,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      'Oleh Komunitas',
+                if (tag.isSpam) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentRed.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'SPAM',
                       style: GoogleFonts.outfit(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+                        color: AppColors.accentRed,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (tag.isSpam) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentRed.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'SPAM',
-                          style: GoogleFonts.outfit(
-                            color: AppColors.accentRed,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -88,14 +70,14 @@ class TagChipCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildVoteButton(
-                icon: Icons.thumb_up_alt_outlined,
+                icon: Icons.thumb_up_alt_rounded,
                 count: tag.upvotes,
                 color: AppColors.accentGreen,
                 onTap: () => onVote('UPVOTE'),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _buildVoteButton(
-                icon: Icons.thumb_down_alt_outlined,
+                icon: Icons.thumb_down_alt_rounded,
                 count: tag.downvotes,
                 color: AppColors.accentRed,
                 onTap: () => onVote('DOWNVOTE'),
@@ -115,25 +97,25 @@ class TagChipCard extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 16),
+            Icon(icon, color: color, size: 14),
             if (count > 0) ...[
               const SizedBox(width: 4),
               Text(
                 '$count',
                 style: GoogleFonts.outfit(
                   color: color,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
