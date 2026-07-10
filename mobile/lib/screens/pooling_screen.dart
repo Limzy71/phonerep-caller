@@ -29,7 +29,11 @@ class _PoolingScreenState extends State<PoolingScreen> {
   @override
   void initState() {
     super.initState();
-    _checkPermission();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkPermission();
+      }
+    });
   }
 
   Future<void> _checkPermission() async {

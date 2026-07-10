@@ -17,17 +17,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  late final List<Widget> _screens;
+  final Set<int> _loadedTabs = {0}; // Hanya muat tab 0 (Beranda) saat startup agar tidak stuck loading
+
+  Widget _getScreen(int index) {
+    if (!_loadedTabs.contains(index)) {
+      return const SizedBox.shrink();
+    }
+    switch (index) {
+      case 0:
+        return SearchScreen(apiService: widget.apiService);
+      case 1:
+        return _buildChatPlaceholder();
+      case 2:
+        return PoolingScreen(apiService: widget.apiService);
+      case 3:
+        return AnalyticsScreen(apiService: widget.apiService);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _screens = [
-      SearchScreen(apiService: widget.apiService),
-      _buildChatPlaceholder(),
-      PoolingScreen(apiService: widget.apiService),
-      AnalyticsScreen(apiService: widget.apiService),
-    ];
   }
 
   Widget _buildChatPlaceholder() {
@@ -93,7 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          _getScreen(0),
+          _getScreen(1),
+          _getScreen(2),
+          _getScreen(3),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -112,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onDestinationSelected: (idx) {
             setState(() {
               _currentIndex = idx;
+              _loadedTabs.add(idx);
             });
           },
           backgroundColor: Colors.transparent,

@@ -25,7 +25,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void initState() {
     super.initState();
     _urlController = TextEditingController(text: widget.apiService.baseUrl);
-    _loadAnalytics();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadAnalytics();
+      }
+    });
   }
 
   Future<void> _loadAnalytics() async {

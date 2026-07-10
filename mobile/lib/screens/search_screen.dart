@@ -44,7 +44,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAndLoadContacts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndLoadContacts();
+      }
+    });
   }
 
   Future<void> _checkAndLoadContacts() async {
