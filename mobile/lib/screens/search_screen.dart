@@ -328,6 +328,180 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     return combined.take(5).toList();
   }
 
+  void _showCallHistoryModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141A26),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        int filterMode = 0; // 0: 7 Hari Terakhir, 1: 30 Hari Terakhir, 2: Semua Waktu
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final now = DateTime.now();
+            final filteredLogs = _callLogs.where((e) {
+              final num = (e.number ?? '').trim();
+              if (num.isEmpty) return false;
+              if (e.timestamp == null || e.timestamp == 0) return true;
+              final date = DateTime.fromMillisecondsSinceEpoch(e.timestamp!);
+              if (filterMode == 0) {
+                return now.difference(date).inDays <= 7;
+              } else if (filterMode == 1) {
+                return now.difference(date).inDays <= 30;
+              }
+              return true; // Semua Waktu
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Pegangan geser atas (grabber)
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Riwayat Panggilan',
+                        style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Filter Pills (7 Hari, 30 Hari, Semua)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip('7 Hari Terakhir', filterMode == 0, () => setModalState(() => filterMode = 0)),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('30 Hari Terakhir', filterMode == 1, () => setModalState(() => filterMode = 1)),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Semua Waktu', filterMode == 2, () => setModalState(() => filterMode = 2)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Menampilkan ${filteredLogs.length} panggilan',
+                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filteredLogs.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Tidak ada panggilan pada rentang waktu ini.',
+                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: filteredLogs.length,
+                            separatorBuilder: (ctx, idx) => const Divider(color: Color(0xFF1E2636), height: 1),
+                            itemBuilder: (ctx, idx) {
+                              final e = filteredLogs[idx];
+                              final num = (e.number ?? '').trim();
+                              String display = (e.name ?? '').trim();
+                              if (display.isEmpty && _contacts.isNotEmpty) {
+                                final match = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(RegExp(r'\D'), '').endsWith(num.replaceAll(RegExp(r'\D'), '')))).firstOrNull;
+                                if (match != null) {
+                                  display = _getContactName(match);
+                                }
+                              }
+                              if (display.isEmpty) display = num;
+
+                              IconData iconData = Icons.call_received_rounded;
+                              Color iconColor = const Color(0xFF10B981); // Hijau (Masuk)
+                              if (e.callType == CallType.outgoing) {
+                                iconData = Icons.call_made_rounded;
+                                iconColor = const Color(0xFF2B8CFF); // Biru (Keluar)
+                              } else if (e.callType == CallType.missed || e.callType == CallType.rejected || e.callType == CallType.blocked) {
+                                iconData = Icons.call_missed_rounded;
+                                iconColor = const Color(0xFFEF4444); // Merah (Missed/Ditolak)
+                              }
+
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(iconData, color: iconColor, size: 20),
+                                ),
+                                title: Text(
+                                  display,
+                                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                                ),
+                                subtitle: Text(
+                                  '$num (${_formatCallType(e.callType)})',
+                                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                                ),
+                                trailing: Text(
+                                  _formatCallLogDate(e.timestamp),
+                                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _searchController.text = num;
+                                  _performSearch(num);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : const Color(0xFF1E2636),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? AppColors.primaryLight : const Color(0xFF2E384D)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
   // Getter Kontak Cepat Asli dari Kontak Perangkat (Tanpa Angka Hash Palsu)
   List<TagItem> get _realQuickContacts {
     if (_contacts.isEmpty) return [];
@@ -987,57 +1161,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             if (_callLogs.isNotEmpty)
               Center(
                 child: TextButton.icon(
-                  onPressed: () {
-                    // Munculkan dialog daftar seluruh riwayat panggilan nyata
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: const Color(0xFF141926),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        title: Text('Semua Riwayat Panggilan (${_callLogs.length})', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
-                        content: SizedBox(
-                          width: double.maxFinite,
-                          height: 400,
-                          child: ListView.builder(
-                            itemCount: _callLogs.length,
-                            itemBuilder: (ctx, idx) {
-                              final e = _callLogs[idx];
-                              final num = (e.number ?? '').trim();
-                              if (num.isEmpty) return const SizedBox.shrink();
-                              String display = (e.name ?? '').trim();
-                              if (display.isEmpty && _contacts.isNotEmpty) {
-                                final match = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(RegExp(r'\D'), '').endsWith(num.replaceAll(RegExp(r'\D'), '')))).firstOrNull;
-                                if (match != null) {
-                                  display = _getContactName(match);
-                                }
-                              }
-                              if (display.isEmpty) display = num;
-
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(display, style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
-                                subtitle: Text('$num (${_formatCallType(e.callType)})', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
-                                trailing: Text(_formatCallLogDate(e.timestamp), style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
-                                onTap: () {
-                                  Navigator.pop(ctx);
-                                  _searchController.text = num;
-                                  _performSearch(num);
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: Text('Tutup', style: GoogleFonts.outfit(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  onPressed: _showCallHistoryModal,
                   icon: Text(
-                    'Tampilkan Semua Riwayat Panggilan (${_callLogs.length})',
+                    'Lihat Riwayat Panggilan Lengkap',
                     style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.w600),
                   ),
                   label: const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B8CFF), size: 18),
