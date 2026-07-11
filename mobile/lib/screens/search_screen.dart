@@ -164,6 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
             _contacts = contacts.where((c) => c.phones.isNotEmpty).toList();
             _isContactsLoading = false;
           });
+          _autoPopulateUserTagsFromContacts();
         }
       } else {
         if (mounted) {
@@ -179,6 +180,42 @@ class _SearchScreenState extends State<SearchScreen> {
           _isContactsLoading = false;
         });
       }
+    }
+  }
+
+  void _autoPopulateUserTagsFromContacts() {
+    if (_contacts.isEmpty) return;
+    final selfKeywords = [
+      'saya',
+      'me',
+      'aku',
+      'my ',
+      'nomor saya',
+      'hp saya',
+      'pribadi',
+      'nomor hp',
+      'diri sendiri',
+    ];
+
+    final Set<String> detectedTags = {};
+    for (final c in _contacts) {
+      final name = _getContactName(c).trim();
+      final lower = name.toLowerCase();
+      if (selfKeywords.any((kw) => lower.startsWith(kw) || lower == kw || lower.contains(kw))) {
+        if (name.isNotEmpty && name.length <= 26) {
+          detectedTags.add(name);
+        }
+      }
+    }
+
+    if (detectedTags.isNotEmpty && mounted) {
+      setState(() {
+        for (final tag in detectedTags) {
+          if (!_userTags.contains(tag)) {
+            _userTags.add(tag);
+          }
+        }
+      });
     }
   }
 
@@ -514,7 +551,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    _phoneRecord == null ? 'Tambah Tag Saya / Komunitas' : 'Tambah Tag Komunitas',
+                    _phoneRecord == null ? 'Tambah Tag Saya' : 'Tambah Tag Komunitas',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -526,7 +563,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 14),
               Text(
                 _phoneRecord == null
-                    ? 'Beri label untuk nomor Anda atau nomor lain agar langsung tersimpan di database komunitas.'
+                    ? 'Buat label identitas atau catatan khusus untuk nomor Anda sendiri yang tersimpan di Tag Saya.'
                     : 'Bantu komunitas mengenali nomor ini dengan memberikan label nama, profesi, atau peringatan.',
                 style: GoogleFonts.outfit(
                   color: AppColors.textSecondary,
@@ -534,28 +571,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   height: 1.4,
                 ),
               ),
-              if (_phoneRecord == null) ...[
-                const SizedBox(height: 18),
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  style: GoogleFonts.outfit(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Nomor Telepon (misal: 081234567890)',
-                    hintStyle: GoogleFonts.outfit(color: Colors.white38),
-                    prefixIcon: const Icon(Icons.phone_rounded, color: AppColors.textSecondary),
-                    filled: true,
-                    fillColor: const Color(0xFF1E263D),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  ),
-                ),
-              ],
               const SizedBox(height: 18),
               TextField(
                 controller: tagController,
                 style: GoogleFonts.outfit(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'Contoh: Kurir Paket / Toko Online / Rekan Kerja',
+                  hintText: _phoneRecord == null
+                      ? 'Nama Tag Saya (misal: My Im3 / Bisnis Saya / Pribadi)'
+                      : 'Contoh: Kurir Paket / Toko Online / Rekan Kerja',
                   hintStyle: GoogleFonts.outfit(color: Colors.white38),
                   prefixIcon: const Icon(
                     Icons.label_outline_rounded,
@@ -565,8 +588,24 @@ class _SearchScreenState extends State<SearchScreen> {
                   fillColor: const Color(0xFF1E263D),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                 ),
-                autofocus: _phoneRecord != null,
+                autofocus: true,
               ),
+              if (_phoneRecord == null) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: GoogleFonts.outfit(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Nomor Telepon Anda (Opsional, untuk sinkronisasi server)',
+                    hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                    prefixIcon: const Icon(Icons.phone_rounded, color: AppColors.textSecondary),
+                    filled: true,
+                    fillColor: const Color(0xFF1E263D),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                  ),
+                ),
+              ],
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
@@ -1523,24 +1562,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // -------------------------------------------------------------
             // 2. TAMPILAN TAG PENGGUNA / TAG SAYA (Struktur Gambar 2 & 3)
-            // -------------------------------------------------------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Tag Saya',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white54,
-                  size: 22,
-                ),
-              ],
+            Text(
+              'Tag Saya',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 12),
             if (_userTags.isEmpty)
