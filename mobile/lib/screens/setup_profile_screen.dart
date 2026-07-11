@@ -2,10 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import 'otp_verification_screen.dart';
 
 class SetupProfileScreen extends StatefulWidget {
   final ApiService apiService;
@@ -60,57 +59,24 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       _errorMessage = null;
     });
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_my_name', name);
-      await prefs.setString('user_my_phone', phone);
-      if (_profilePhotoPath != null && _profilePhotoPath!.isNotEmpty) {
-        await prefs.setString('user_my_photo', _profilePhotoPath!);
-      }
+    // Simulasi pengiriman kode OTP via WhatsApp/SMS
+    await Future.delayed(const Duration(milliseconds: 600));
 
-      // Simpan tag awal bila belum ada
-      final List<String> currentTags = prefs.getStringList('user_my_tags') ?? [];
-      if (!currentTags.contains(name)) {
-        currentTags.add(name);
-        await prefs.setStringList('user_my_tags', currentTags);
-      }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
 
-      // Opsional: daftarkan ke database komunitas bila terkoneksi
-      try {
-        final lookupRes = await widget.apiService.lookupPhoneNumber(phone);
-        String phoneId = '';
-        if (lookupRes.found && lookupRes.data != null) {
-          phoneId = lookupRes.data!.id;
-        } else {
-          await widget.apiService.syncContacts([
-            {'name': name, 'phoneNumber': phone}
-          ]);
-          final lookupAfter = await widget.apiService.lookupPhoneNumber(phone);
-          if (lookupAfter.found && lookupAfter.data != null) {
-            phoneId = lookupAfter.data!.id;
-          }
-        }
-        if (phoneId.isNotEmpty) {
-          await widget.apiService.addTag(phoneId, name);
-        }
-      } catch (e) {
-        // Abaikan jika server offline, tetap bisa masuk offline
-      }
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(apiService: widget.apiService),
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => OtpVerificationScreen(
+            apiService: widget.apiService,
+            name: name,
+            phone: phone,
+            photoPath: _profilePhotoPath,
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Terjadi kesalahan saat menyimpan profil: $e';
-        });
-      }
+        ),
+      );
     }
   }
 
