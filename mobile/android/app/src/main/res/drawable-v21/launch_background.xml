@@ -2,4 +2,10 @@
 <!-- Latar Belakang Deep Royal Blue Premium -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_background" />
+    <!-- Ikon dengan background transparan di tengah layar -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/ic_splash" />
+    </item>
 </layer-list>
