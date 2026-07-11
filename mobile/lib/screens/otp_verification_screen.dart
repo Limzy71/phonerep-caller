@@ -39,6 +39,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     _otpController.addListener(_onOtpChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
+      widget.apiService.sendOtp(widget.phone);
     });
   }
 
@@ -74,6 +75,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void _resendCode() {
     if (_secondsRemaining == 0) {
       _startTimer();
+      widget.apiService.sendOtp(widget.phone);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('📨 Kode OTP baru telah dikirim ulang via WhatsApp Gateway.'),
@@ -94,21 +96,21 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       return;
     }
 
-    // Untuk tahap pengujian & development, kita validasi kode standar OTP pengujian: 123456
-    if (code != '123456') {
-      setState(() {
-        _errorMessage = '❌ Kode OTP salah. Untuk mode pengujian/developer, masukkan kode: 123456';
-      });
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    // Simulasi verifikasi aman ke server
-    await Future.delayed(const Duration(milliseconds: 1200));
+    final verifyRes = await widget.apiService.verifyOtp(widget.phone, code);
+    if (verifyRes['success'] != true) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = verifyRes['message']?.toString() ?? '❌ Kode OTP salah. Silakan periksa kembali pesan WhatsApp Anda.';
+        });
+      }
+      return;
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();

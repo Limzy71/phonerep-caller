@@ -215,4 +215,40 @@ class ApiService extends ChangeNotifier {
       throw Exception('Gagal memuat analitik: $e');
     }
   }
+
+  Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
+    try {
+      final url = Uri.parse('$_baseUrl/phone-lookup/send-otp');
+      final response = await http.post(
+        url,
+        headers: _defaultHeaders,
+        body: jsonEncode({'phoneNumber': phoneNumber}),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'Gagal mengirim OTP (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'message': 'Kesalahan koneksi ke server: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String code) async {
+    try {
+      final url = Uri.parse('$_baseUrl/phone-lookup/verify-otp');
+      final response = await http.post(
+        url,
+        headers: _defaultHeaders,
+        body: jsonEncode({'phoneNumber': phoneNumber, 'code': code}),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'Verifikasi gagal (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'message': 'Kesalahan koneksi ke server: $e'};
+    }
+  }
 }

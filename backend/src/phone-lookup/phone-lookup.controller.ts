@@ -29,6 +29,19 @@ export class PhoneLookupController {
     return await this.phoneLookupService.voteTag(tagId, userId, voteType);
   }
 
+  @Post('send-otp')
+  async sendOtp(@Body('phoneNumber') phoneNumber: string) {
+    return await this.phoneLookupService.sendOtp(phoneNumber);
+  }
+
+  @Post('verify-otp')
+  async verifyOtp(
+    @Body('phoneNumber') phoneNumber: string,
+    @Body('code') code: string,
+  ) {
+    return await this.phoneLookupService.verifyOtp(phoneNumber, code);
+  }
+
   @Get('analytics')
   async getAnalytics() {
     return await this.phoneLookupService.getAnalytics();

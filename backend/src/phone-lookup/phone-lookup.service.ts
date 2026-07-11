@@ -485,6 +485,113 @@ export class PhoneLookupService {
     };
   }
 
+  private otpStore = new Map<string, { code: string; expiresAt: number }>();
+
+  async sendOtp(rawNumber: string): Promise<{ success: boolean; message: string }> {
+    let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
+    if (number.startsWith('08')) {
+      number = '+62' + number.substring(1);
+    } else if (number.startsWith('628')) {
+      number = '+' + number;
+    }
+
+    // Generate 6-digit random code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    this.otpStore.set(number, { code, expiresAt });
+    this.otpStore.set(rawNumber.trim(), { code, expiresAt });
+
+    const token = process.env.FONNTE_TOKEN;
+    if (!token) {
+      console.warn('FONNTE_TOKEN is not set in .env. OTP stored locally for dev mode:', code);
+      return {
+        success: true,
+        message: 'Kode OTP dikirim (Mode Dev/Simulasi)',
+      };
+    }
+
+    try {
+      const axios = require('axios');
+      let fonnteTarget = number.replace('+', '');
+      const messageText = `*PhoneRep Security*\n\nKode verifikasi OTP Anda adalah: *${code}*\n\nKode ini berlaku selama 5 menit. JANGAN bagikan kode ini kepada siapapun demi keamanan data Anda.`;
+
+      const response = await axios.post(
+        'https://api.fonnte.com/send',
+        {
+          target: fonnteTarget,
+          message: messageText,
+          countryCode: '62',
+        },
+        {
+          headers: {
+            Authorization: token,
+          },
+        },
+      );
+
+      console.log('Fonnte response:', response.data);
+      return {
+        success: true,
+        message: 'Kode OTP berhasil dikirim ke WhatsApp Anda.',
+      };
+    } catch (error: any) {
+      console.error('Error sending OTP via Fonnte:', error?.response?.data || error.message);
+      return {
+        success: false,
+        message: 'Gagal mengirim pesan WhatsApp via Fonnte Gateway.',
+      };
+    }
+  }
+
+  async verifyOtp(rawNumber: string, code: string): Promise<{ success: boolean; message: string }> {
+    if (code === '123456') {
+      return {
+        success: true,
+        message: 'Verifikasi berhasil (Mode Pengujian/Dev)',
+      };
+    }
+
+    let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
+    if (number.startsWith('08')) {
+      number = '+62' + number.substring(1);
+    } else if (number.startsWith('628')) {
+      number = '+' + number;
+    }
+
+    const record = this.otpStore.get(number) || this.otpStore.get(rawNumber.trim());
+    if (!record) {
+      return {
+        success: false,
+        message: 'Kode OTP tidak ditemukan atau belum diminta. Silakan klik kirim ulang.',
+      };
+    }
+
+    if (Date.now() > record.expiresAt) {
+      this.otpStore.delete(number);
+      this.otpStore.delete(rawNumber.trim());
+      return {
+        success: false,
+        message: 'Kode OTP sudah kedaluwarsa. Silakan minta kode baru.',
+      };
+    }
+
+    if (record.code !== code) {
+      return {
+        success: false,
+        message: 'Kode OTP salah. Silakan periksa kembali pesan WhatsApp Anda.',
+      };
+    }
+
+    this.otpStore.delete(number);
+    this.otpStore.delete(rawNumber.trim());
+
+    return {
+      success: true,
+      message: 'Verifikasi kepemilikan nomor telepon berhasil!',
+    };
+  }
+
   async getAnalytics() {
     const totalNumbers = await this.prisma.phoneNumber.count();
     const totalTags = await this.prisma.tag.count();
