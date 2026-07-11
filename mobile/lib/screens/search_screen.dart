@@ -164,7 +164,6 @@ class _SearchScreenState extends State<SearchScreen> {
             _contacts = contacts.where((c) => c.phones.isNotEmpty).toList();
             _isContactsLoading = false;
           });
-          _autoPopulateUserTagsFromContacts();
         }
       } else {
         if (mounted) {
@@ -180,42 +179,6 @@ class _SearchScreenState extends State<SearchScreen> {
           _isContactsLoading = false;
         });
       }
-    }
-  }
-
-  void _autoPopulateUserTagsFromContacts() {
-    if (_contacts.isEmpty) return;
-    final selfKeywords = [
-      'saya',
-      'me',
-      'aku',
-      'my ',
-      'nomor saya',
-      'hp saya',
-      'pribadi',
-      'nomor hp',
-      'diri sendiri',
-    ];
-
-    final Set<String> detectedTags = {};
-    for (final c in _contacts) {
-      final name = _getContactName(c).trim();
-      final lower = name.toLowerCase();
-      if (selfKeywords.any((kw) => lower.startsWith(kw) || lower == kw || lower.contains(kw))) {
-        if (name.isNotEmpty && name.length <= 26) {
-          detectedTags.add(name);
-        }
-      }
-    }
-
-    if (detectedTags.isNotEmpty && mounted) {
-      setState(() {
-        for (final tag in detectedTags) {
-          if (!_userTags.contains(tag)) {
-            _userTags.add(tag);
-          }
-        }
-      });
     }
   }
 
@@ -398,17 +361,6 @@ class _SearchScreenState extends State<SearchScreen> {
             'initial': _getInitials(name),
             'color': _getAvatarColor(name),
           });
-
-          // Otomatis simpan ke Tag Saya bila belum ada
-          if (_userTags.isEmpty &&
-              res.data != null &&
-              res.data!.tags.isNotEmpty) {
-            for (final t in res.data!.tags.take(4)) {
-              if (!_userTags.contains(t.labelName)) {
-                _userTags.add(t.labelName);
-              }
-            }
-          }
         });
       }
     } catch (e) {
