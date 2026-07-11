@@ -50,6 +50,53 @@ class _SearchScreenState extends State<SearchScreen> {
   String _selectedCountryCode = '+62';
   String _callLogFilterTime = 'Semua';
 
+  String _getDynamicSearchHint() {
+    switch (_selectedCountryCode.trim()) {
+      case '+62':
+        return 'Contoh: 0812... / 62812...';
+      case '+60':
+        return 'Contoh: 012... / 6012...';
+      case '+65':
+        return 'Contoh: 812... / 65812...';
+      case '+1':
+        return 'Contoh: 202... / 1202...';
+      case '+44':
+        return 'Contoh: 0712... / 44712...';
+      case '+61':
+        return 'Contoh: 0412... / 61412...';
+      case '+81':
+        return 'Contoh: 090... / 8190...';
+      case '+82':
+        return 'Contoh: 010... / 8210...';
+      default:
+        return 'Contoh awalan nomor ($_selectedCountryCode)...';
+    }
+  }
+
+  String _formatQueryWithCountryCode(String raw) {
+    String clean = raw.trim().replaceAll(' ', '').replaceAll('-', '');
+    if (clean.isEmpty) return clean;
+    if (clean.startsWith('+')) return clean;
+    if (_selectedCountryCode == '+62') {
+      if (clean.startsWith('08')) {
+        return '+62${clean.substring(1)}';
+      } else if (clean.startsWith('628')) {
+        return '+$clean';
+      } else if (clean.startsWith('8')) {
+        return '+62$clean';
+      }
+    } else {
+      if (clean.startsWith('0')) {
+        return '$_selectedCountryCode${clean.substring(1)}';
+      } else if (!clean.startsWith(_selectedCountryCode.replaceAll('+', ''))) {
+        return '$_selectedCountryCode$clean';
+      } else {
+        return '+$clean';
+      }
+    }
+    return clean;
+  }
+
   // State Kontak & Riwayat Telepon Nyata Perangkat (TANPA DATA DUMMY / ALFABETIS)
   bool _hasContactPermission = false;
   bool _hasCallLogPermission = false;
@@ -326,7 +373,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
-    final cleanQuery = query.trim();
+    final cleanQuery = _formatQueryWithCountryCode(query);
     if (cleanQuery.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Masukkan nomor telepon yang valid.')),
@@ -1126,7 +1173,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           fontSize: 15,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Pencarian berdasarkan nomor...',
+                          hintText: _getDynamicSearchHint(),
                           hintStyle: GoogleFonts.outfit(
                             color: Colors.white54,
                             fontSize: 14,
@@ -1251,7 +1298,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     } else {
-      // Mode Kapsul Normal (Beranda)
+      // Mode Kapsul Normal (Beranda) dengan Contoh Negara Dinamis
       return Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         color: Colors.transparent, // Menyatu dengan warna background utama
@@ -1270,38 +1317,70 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ],
           ),
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _isSearchExpanded = true;
-              });
-              _searchFocusNode.requestFocus();
-            },
-            borderRadius: BorderRadius.circular(24),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.search_rounded,
-                  color: Colors.white60,
-                  size: 22,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Pencarian berdasarkan nomor',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white60,
-                      fontSize: 15,
-                    ),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: _showCountryCodeModal,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF28324A),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_getFlagForCountryCode(_selectedCountryCode), style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 4),
+                      Text(
+                        _selectedCountryCode,
+                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
-                const Icon(
-                  Icons.account_circle_outlined,
-                  color: Colors.white70,
-                  size: 24,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _isSearchExpanded = true;
+                    });
+                    _searchFocusNode.requestFocus();
+                  },
+                  borderRadius: BorderRadius.circular(24),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search_rounded,
+                        color: Colors.white60,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _getDynamicSearchHint(),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white60,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.account_circle_outlined,
+                color: Colors.white70,
+                size: 24,
+              ),
+            ],
           ),
         ),
       );
