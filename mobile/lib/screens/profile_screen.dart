@@ -65,6 +65,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showPhotoOptionsModal() {
+    final hasPhoto = _userPhotoPath != null && File(_userPhotoPath!).existsSync();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141926),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Kelola Foto Profil',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primaryLight),
+                ),
+                title: Text('Pilih dari Galeri', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickPhoto();
+                },
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_rounded, color: Color(0xFFEF4444)),
+                  ),
+                  title: Text('Hapus Foto Profil', style: GoogleFonts.outfit(color: const Color(0xFFEF4444), fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('user_my_photo');
+                    if (mounted) {
+                      setState(() {
+                        _userPhotoPath = null;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Foto profil dihapus. Avatar kembali ke default huruf awal.'),
+                          backgroundColor: AppColors.accentGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showEditProfileDialog() {
     final nameCtrl = TextEditingController(text: _userName);
     final phoneCtrl = TextEditingController(text: _userPhone);
@@ -160,12 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _getInitials(String name) {
-    if (name.isEmpty) return 'U';
-    final parts = name.trim().split(' ');
+    if (name.trim().isEmpty) return 'U';
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'U';
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return name[0].toUpperCase();
+    return parts[0][0].toUpperCase();
   }
 
   @override
@@ -228,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   children: [
                     GestureDetector(
-                      onTap: _pickPhoto,
+                      onTap: _showPhotoOptionsModal,
                       child: Stack(
                         alignment: Alignment.bottomRight,
                         children: [
@@ -236,7 +313,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 76,
                             height: 76,
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6C63FF), Color(0xFF2B8CFF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 2),
                               boxShadow: [

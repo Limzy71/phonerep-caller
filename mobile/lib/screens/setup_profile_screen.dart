@@ -22,6 +22,31 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
   String? _errorMessage;
   String? _profilePhotoPath;
 
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  String _getInitials(String name) {
+    if (name.trim().isEmpty) return '?';
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
   Future<void> _pickProfilePhoto() async {
     try {
       final picker = ImagePicker();
@@ -39,6 +64,80 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
     } catch (e) {
       debugPrint('Error picking image: $e');
     }
+  }
+
+  void _showPhotoOptionsModal() {
+    final hasPhoto = _profilePhotoPath != null && File(_profilePhotoPath!).existsSync();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141926),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Kelola Foto Profil',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primaryLight),
+                ),
+                title: Text('Pilih dari Galeri', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickProfilePhoto();
+                },
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_rounded, color: Color(0xFFEF4444)),
+                  ),
+                  title: Text('Hapus Foto Profil', style: GoogleFonts.outfit(color: const Color(0xFFEF4444), fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    if (mounted) {
+                      setState(() {
+                        _profilePhotoPath = null;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Foto profil dihapus. Avatar kembali ke default huruf awal.'),
+                          backgroundColor: AppColors.accentGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _saveAndContinue() async {
@@ -106,7 +205,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: _pickProfilePhoto,
+                    onTap: _showPhotoOptionsModal,
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
@@ -148,11 +247,26 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                                       width: 104,
                                       height: 104,
                                     )
-                                  : const Center(
-                                      child: Icon(
-                                        Icons.person_add_rounded,
-                                        size: 50,
-                                        color: AppColors.primaryLight,
+                                  : Container(
+                                      width: 104,
+                                      height: 104,
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [Color(0xFF6C63FF), Color(0xFF2B8CFF)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _getInitials(_nameController.text),
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 38,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
                                     ),
                             ),
