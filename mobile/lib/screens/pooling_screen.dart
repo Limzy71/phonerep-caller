@@ -29,11 +29,26 @@ class _PoolingScreenState extends State<PoolingScreen> {
   @override
   void initState() {
     super.initState();
+    widget.apiService.addListener(_onApiServiceChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkPermission();
       }
     });
+  }
+
+  void _onApiServiceChanged() {
+    if (mounted) {
+      setState(() {
+        _errorMessage = null;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.apiService.removeListener(_onApiServiceChanged);
+    super.dispose();
   }
 
   Future<void> _checkPermission() async {

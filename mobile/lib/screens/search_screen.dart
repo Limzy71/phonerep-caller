@@ -18,7 +18,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver {
+class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -47,20 +47,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkAndLoadContacts();
       }
     });
-  }
-
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _hasCallLogPermission) {
-      _fetchRealCallLogs(showFeedback: false);
-    }
   }
 
   Future<void> _checkAndLoadContacts() async {
@@ -76,17 +67,6 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     }
     if (_hasCallLogPermission) {
       await _fetchRealCallLogs();
-    } else {
-      // Fallback: coba tes baca langsung jika izin ternyata sudah ada di OS Android
-      try {
-        final entries = await CallLog.get();
-        _hasCallLogPermission = true;
-        if (mounted) {
-          setState(() {
-            _callLogs = entries.where((e) => (e.number ?? '').trim().isNotEmpty).toList();
-          });
-        }
-      } catch (_) {}
     }
     if (mounted) {
       setState(() => _isContactsLoading = false);
@@ -100,20 +80,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
       _hasCallLogPermission = true;
       await _fetchRealCallLogs();
     } else {
-      // Coba panggil langsung log, jika sukses berarti Android sudah memberikan izin
-      try {
-        final entries = await CallLog.get();
-        _hasCallLogPermission = true;
-        if (mounted) {
-          setState(() {
-            _callLogs = entries.where((e) => (e.number ?? '').trim().isNotEmpty).toList();
-          });
-        }
-      } catch (e) {
-        _hasCallLogPermission = false;
-        if (mounted && status.isPermanentlyDenied) {
-          openAppSettings();
-        }
+      _hasCallLogPermission = false;
+      if (mounted && status.isPermanentlyDenied) {
+        openAppSettings();
       }
     }
     if (mounted) {
@@ -121,37 +90,18 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     }
   }
 
-  Future<void> _fetchRealCallLogs({bool showFeedback = false}) async {
+  Future<void> _fetchRealCallLogs() async {
     try {
-      if (showFeedback && mounted) {
-        setState(() => _isContactsLoading = true);
-      }
       final Iterable<CallLogEntry> entries = await CallLog.get();
       if (mounted) {
         setState(() {
-          _callLogs = entries.where((e) => (e.number ?? '').trim().isNotEmpty).toList();
-          if (showFeedback) {
-            _isContactsLoading = false;
-          }
+          _callLogs = entries
+              .where((e) => (e.number ?? '').trim().isNotEmpty)
+              .toList();
         });
-        if (showFeedback) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Riwayat panggilan berhasil diperbarui (${_callLogs.length} panggilan terdeteksi)',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: AppColors.primary,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
       }
     } catch (e) {
-      if (showFeedback && mounted) {
-        setState(() => _isContactsLoading = false);
-      }
+      // Abaikan jika gagal mengakses log
     }
   }
 
@@ -218,7 +168,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
   String _getContactName(Contact c) {
     if (c.displayName.trim().isNotEmpty) return c.displayName.trim();
-    final fullName = '${c.name.first} ${c.name.middle} ${c.name.last}'.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final fullName = '${c.name.first} ${c.name.middle} ${c.name.last}'
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
     if (fullName.isNotEmpty) return fullName;
     return c.phones.first.number;
   }
@@ -227,7 +179,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '#';
     if (parts.length == 1) {
-      return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+      return parts.first
+          .substring(0, parts.first.length >= 2 ? 2 : 1)
+          .toUpperCase();
     }
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
@@ -245,47 +199,10 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
     return colors[seed.hashCode.abs() % colors.length];
   }
 
-  String _formatCallType(CallType? type) {
-    switch (type) {
-      case CallType.incoming:
-        return 'Panggilan Masuk';
-      case CallType.outgoing:
-        return 'Panggilan Keluar';
-      case CallType.missed:
-        return 'Tak Terjawab';
-      case CallType.rejected:
-        return 'Ditolak';
-      case CallType.blocked:
-        return 'Dibloking';
-      default:
-        return 'Panggilan';
-    }
-  }
-
-  String _formatCallLogDate(int? timestamp) {
-    if (timestamp == null || timestamp == 0) return 'Baru saja';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inMinutes < 1) return 'Baru saja';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} mnt lalu';
-    if (diff.inHours < 24 && now.day == date.day) {
-      final h = date.hour.toString().padLeft(2, '0');
-      final m = date.minute.toString().padLeft(2, '0');
-      return 'Hari Ini, $h:$m';
-    }
-    if (diff.inDays == 1 || (diff.inHours < 48 && now.day != date.day)) {
-      final h = date.hour.toString().padLeft(2, '0');
-      final m = date.minute.toString().padLeft(2, '0');
-      return 'Kemarin, $h:$m';
-    }
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  // Getter Panggilan Terbaru Asli dari Riwayat Telepon Nyata (Call Log Android) & Riwayat Pencarian
+  // Getter Panggilan Terbaru Asli dari Kontak Perangkat & Riwayat Nyata
   List<Map<String, dynamic>> get _realRecentCalls {
     final List<Map<String, dynamic>> combined = [];
-    // 1. Prioritaskan riwayat pencarian nomor yang baru dilakukan pengguna di aplikasi
+    // Prioritaskan riwayat pencarian nyata pengguna jika ada
     for (final item in _recentlyViewed) {
       if (item['date'] != 'Dari Kontak') {
         combined.add({
@@ -297,209 +214,53 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
         });
       }
     }
-    // 2. Ambil langsung dari Riwayat Telepon Asli HP Pengguna (Call Log) jika izin diberikan
+    // Tambahkan dari riwayat panggilan nyata HP (CallLog) jika ada
     if (_callLogs.isNotEmpty) {
-      for (final e in _callLogs) {
-        if (combined.length >= 5) break;
-        final num = (e.number ?? '').trim();
-        if (num.isEmpty) continue;
-        if (!combined.any((x) => x['number'] == num)) {
-          // Cari nama kontak asli dari address book jika e.name kosong
-          String display = (e.name ?? '').trim();
-          if (display.isEmpty && _contacts.isNotEmpty) {
-            final match = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(RegExp(r'\D'), '').endsWith(num.replaceAll(RegExp(r'\D'), '')))).firstOrNull;
-            if (match != null) {
-              display = _getContactName(match);
-            }
-          }
-          if (display.isEmpty) display = num;
-
+      for (final log in _callLogs) {
+        if (combined.length >= 8) break;
+        final num = (log.number ?? '').trim();
+        if (num.isNotEmpty && !combined.any((x) => x['number'] == num)) {
+          final name = (log.name != null && log.name!.trim().isNotEmpty) ? log.name!.trim() : num;
+          final typeStr = log.callType == CallType.incoming
+              ? 'Panggilan Masuk'
+              : log.callType == CallType.outgoing
+                  ? 'Panggilan Keluar'
+                  : 'Tak Terjawab';
           combined.add({
-            'name': display,
-            'sub': '$num (${_formatCallType(e.callType)})',
-            'date': _formatCallLogDate(e.timestamp),
+            'name': name,
+            'sub': '$num ($typeStr)',
+            'date': 'Log Telepon',
             'isSpam': false,
             'number': num,
           });
         }
       }
     }
-    // Tidak pernah lagi mengambil kontak alfabetis A-Z ke dalam Panggilan Terbaru agar tidak salah data!
+    // Lengkapi dengan kontak asli HP pengguna tanpa hardcode string/tanggal palsu
+    if (_contacts.isNotEmpty) {
+      for (final c in _contacts) {
+        if (combined.length >= 5) break;
+        final num = c.phones.first.number;
+        if (!combined.any((x) => x['number'] == num)) {
+          final labelStr =
+              (c.phones.first.label == PhoneLabel.custom
+                      ? c.phones.first.customLabel
+                      : c.phones.first.label.name)
+                  .trim();
+          final cleanLabel = labelStr.isNotEmpty && labelStr != 'custom'
+              ? labelStr
+              : 'Ponsel';
+          combined.add({
+            'name': _getContactName(c),
+            'sub': '$num ($cleanLabel)',
+            'date': 'Kontak HP',
+            'isSpam': false,
+            'number': num,
+          });
+        }
+      }
+    }
     return combined.take(5).toList();
-  }
-
-  void _showCallHistoryModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141A26),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        int filterMode = 0; // 0: 7 Hari Terakhir, 1: 30 Hari Terakhir, 2: Semua Waktu
-
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final now = DateTime.now();
-            final filteredLogs = _callLogs.where((e) {
-              final num = (e.number ?? '').trim();
-              if (num.isEmpty) return false;
-              if (e.timestamp == null || e.timestamp == 0) return true;
-              final date = DateTime.fromMillisecondsSinceEpoch(e.timestamp!);
-              if (filterMode == 0) {
-                return now.difference(date).inDays <= 7;
-              } else if (filterMode == 1) {
-                return now.difference(date).inDays <= 30;
-              }
-              return true; // Semua Waktu
-            }).toList();
-
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.75,
-              padding: const EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Pegangan geser atas (grabber)
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Riwayat Panggilan',
-                        style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Filter Pills (7 Hari, 30 Hari, Semua)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterChip('7 Hari Terakhir', filterMode == 0, () => setModalState(() => filterMode = 0)),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('30 Hari Terakhir', filterMode == 1, () => setModalState(() => filterMode = 1)),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Semua Waktu', filterMode == 2, () => setModalState(() => filterMode = 2)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Menampilkan ${filteredLogs.length} panggilan',
-                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: filteredLogs.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Tidak ada panggilan pada rentang waktu ini.',
-                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: filteredLogs.length,
-                            separatorBuilder: (ctx, idx) => const Divider(color: Color(0xFF1E2636), height: 1),
-                            itemBuilder: (ctx, idx) {
-                              final e = filteredLogs[idx];
-                              final num = (e.number ?? '').trim();
-                              String display = (e.name ?? '').trim();
-                              if (display.isEmpty && _contacts.isNotEmpty) {
-                                final match = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(RegExp(r'\D'), '').endsWith(num.replaceAll(RegExp(r'\D'), '')))).firstOrNull;
-                                if (match != null) {
-                                  display = _getContactName(match);
-                                }
-                              }
-                              if (display.isEmpty) display = num;
-
-                              IconData iconData = Icons.call_received_rounded;
-                              Color iconColor = const Color(0xFF10B981); // Hijau (Masuk)
-                              if (e.callType == CallType.outgoing) {
-                                iconData = Icons.call_made_rounded;
-                                iconColor = const Color(0xFF2B8CFF); // Biru (Keluar)
-                              } else if (e.callType == CallType.missed || e.callType == CallType.rejected || e.callType == CallType.blocked) {
-                                iconData = Icons.call_missed_rounded;
-                                iconColor = const Color(0xFFEF4444); // Merah (Missed/Ditolak)
-                              }
-
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                                leading: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: iconColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(iconData, color: iconColor, size: 20),
-                                ),
-                                title: Text(
-                                  display,
-                                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
-                                ),
-                                subtitle: Text(
-                                  '$num (${_formatCallType(e.callType)})',
-                                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
-                                ),
-                                trailing: Text(
-                                  _formatCallLogDate(e.timestamp),
-                                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(ctx);
-                                  _searchController.text = num;
-                                  _performSearch(num);
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFF1E2636),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.primaryLight : const Color(0xFF2E384D)),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.outfit(
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
   }
 
   // Getter Kontak Cepat Asli dari Kontak Perangkat (Tanpa Angka Hash Palsu)
@@ -522,7 +283,6 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -541,7 +301,8 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
       _isLoading = true;
       _errorMessage = null;
       _statusMessage = null;
-      _isSearchExpanded = false; // Tutup mode daftar dilihat dan tampilkan hasil real
+      _isSearchExpanded =
+          false; // Tutup mode daftar dilihat dan tampilkan hasil real
     });
 
     try {
@@ -558,7 +319,15 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
           if (res.data != null && res.data!.tags.isNotEmpty) {
             name = res.data!.tags.first.labelName;
           } else {
-            final matched = _contacts.where((c) => c.phones.any((p) => p.number.replaceAll(' ', '') == cleanQuery.replaceAll(' ', ''))).firstOrNull;
+            final matched = _contacts
+                .where(
+                  (c) => c.phones.any(
+                    (p) =>
+                        p.number.replaceAll(' ', '') ==
+                        cleanQuery.replaceAll(' ', ''),
+                  ),
+                )
+                .firstOrNull;
             if (matched != null) {
               name = _getContactName(matched);
             }
@@ -572,7 +341,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
           });
 
           // Otomatis simpan ke Tag Saya bila belum ada
-          if (_userTags.isEmpty && res.data != null && res.data!.tags.isNotEmpty) {
+          if (_userTags.isEmpty &&
+              res.data != null &&
+              res.data!.tags.isNotEmpty) {
             for (final t in res.data!.tags.take(4)) {
               if (!_userTags.contains(t.labelName)) {
                 _userTags.add(t.labelName);
@@ -650,19 +421,30 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                       color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.local_offer_rounded, color: AppColors.primaryLight),
+                    child: const Icon(
+                      Icons.local_offer_rounded,
+                      color: AppColors.primaryLight,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'Tambah Tag Komunitas',
-                    style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
               Text(
                 'Bantu komunitas mengenali nomor ini dengan memberikan label nama, profesi, atau peringatan.',
-                style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                style: GoogleFonts.outfit(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 18),
               TextField(
@@ -671,12 +453,27 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 decoration: InputDecoration(
                   hintText: 'Contoh: Kurir Paket / Telemarketing / Rekan Kerja',
                   hintStyle: GoogleFonts.outfit(color: Colors.white38),
-                  prefixIcon: const Icon(Icons.label_outline_rounded, color: AppColors.textSecondary),
+                  prefixIcon: const Icon(
+                    Icons.label_outline_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                   filled: true,
                   fillColor: const Color(0xFF1E263D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF007AFF), width: 1.5)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF007AFF),
+                      width: 1.5,
+                    ),
+                  ),
                 ),
                 autofocus: true,
               ),
@@ -691,7 +488,10 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     Navigator.pop(ctx);
                     setState(() => _isLoading = true);
                     try {
-                      final newTag = await widget.apiService.addTag(_phoneRecord!.id, label);
+                      final newTag = await widget.apiService.addTag(
+                        _phoneRecord!.id,
+                        label,
+                      );
                       if (newTag != null && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -709,7 +509,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(e.toString().replaceAll('Exception: ', '')),
+                            content: Text(
+                              e.toString().replaceAll('Exception: ', ''),
+                            ),
                             backgroundColor: AppColors.accentRed,
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -720,11 +522,17 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(
                     'SIMPAN TAG',
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ),
               ),
@@ -750,25 +558,45 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 if (_errorMessage != null)
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 20),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 20,
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(_errorMessage!, style: GoogleFonts.outfit(color: const Color(0xFFEF4444), fontSize: 13))),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFFEF4444),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 if (_statusMessage != null && _statusMessage!.isNotEmpty)
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
@@ -776,9 +604,21 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 20),
+                        const Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(_statusMessage!, style: GoogleFonts.outfit(color: const Color(0xFF10B981), fontSize: 13))),
+                        Expanded(
+                          child: Text(
+                            _statusMessage!,
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF10B981),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -786,12 +626,16 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 // Konten Utama
                 Expanded(
                   child: _isLoading || _isContactsLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primaryLight))
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primaryLight,
+                          ),
+                        )
                       : _isSearchExpanded
-                          ? _buildSearchExpandedView() // Tampilan saat tombol search dipencet (Gambar ke-5)
-                          : _phoneRecord != null
-                              ? _buildRealSearchResultView() // Tampilan hasil detail nomor
-                              : _buildHomeIdle4Sections(), // Tampilan beranda murni 4 struktur nyata dari kontak
+                      ? _buildSearchExpandedView() // Tampilan saat tombol search dipencet (Gambar ke-5)
+                      : _phoneRecord != null
+                      ? _buildRealSearchResultView() // Tampilan hasil detail nomor
+                      : _buildHomeIdle4Sections(), // Tampilan beranda murni 4 struktur nyata dari kontak
                 ),
               ],
             ),
@@ -809,8 +653,14 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     _searchFocusNode.requestFocus();
                   },
                   backgroundColor: const Color(0xFF004085),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.apps_rounded, color: Colors.white, size: 28),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.apps_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
           ],
@@ -835,7 +685,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   _searchFocusNode.unfocus();
                 });
               },
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 4),
             Container(
@@ -855,13 +709,31 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: const Center(
-                      child: Text('ID', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'ID',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(_selectedCountryCode, style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    _selectedCountryCode,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white60, size: 18),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.white60,
+                    size: 18,
+                  ),
                 ],
               ),
             ),
@@ -881,10 +753,16 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                       child: TextField(
                         controller: _searchController,
                         focusNode: _searchFocusNode,
-                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Pencarian berdasarkan nomor...',
-                          hintStyle: GoogleFonts.outfit(color: Colors.white54, fontSize: 14),
+                          hintStyle: GoogleFonts.outfit(
+                            color: Colors.white54,
+                            fontSize: 14,
+                          ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
@@ -900,10 +778,18 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     if (_searchController.text.isNotEmpty)
                       GestureDetector(
                         onTap: () => _searchController.clear(),
-                        child: const Icon(Icons.clear, color: Colors.white60, size: 18),
+                        child: const Icon(
+                          Icons.clear,
+                          color: Colors.white60,
+                          size: 18,
+                        ),
                       )
                     else
-                      const Icon(Icons.account_circle_outlined, color: Colors.white70, size: 22),
+                      const Icon(
+                        Icons.account_circle_outlined,
+                        color: Colors.white70,
+                        size: 22,
+                      ),
                   ],
                 ),
               ),
@@ -924,7 +810,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFF2A3450), width: 1),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: InkWell(
@@ -937,15 +827,26 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             borderRadius: BorderRadius.circular(24),
             child: Row(
               children: [
-                const Icon(Icons.search_rounded, color: Colors.white60, size: 22),
+                const Icon(
+                  Icons.search_rounded,
+                  color: Colors.white60,
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Pencarian berdasarkan nomor',
-                    style: GoogleFonts.outfit(color: Colors.white60, fontSize: 15),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white60,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
-                const Icon(Icons.account_circle_outlined, color: Colors.white70, size: 24),
+                const Icon(
+                  Icons.account_circle_outlined,
+                  color: Colors.white70,
+                  size: 24,
+                ),
               ],
             ),
           ),
@@ -977,122 +878,107 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 decoration: BoxDecoration(
                   color: const Color(0xFF1F2637),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.contacts_rounded, color: AppColors.primaryLight, size: 36),
+                    const Icon(
+                      Icons.contacts_rounded,
+                      color: AppColors.primaryLight,
+                      size: 36,
+                    ),
                     const SizedBox(height: 10),
                     Text(
                       'Hubungkan Kontak Nyata Anda',
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Beri izin akses kontak untuk memunculkan riwayat panggilan & kontak cepat asli dari HP Anda.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.35),
+                      style: GoogleFonts.outfit(
+                        color: AppColors.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     ElevatedButton(
                       onPressed: _requestContactPermission,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: Text('Aktifkan Izin Kontak Asli', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Aktifkan Izin Kontak Asli',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
 
-            // -------------------------------------------------------------
+            // ---------------------------------------------
             // 1. PANGGILAN TERBARU & TOMBOL LIHAT SEMUA
-            // -------------------------------------------------------------
+            // ---------------------------------------------
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Panggilan Terbaru',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
-                ),
-                if (_hasCallLogPermission)
-                  InkWell(
-                    onTap: () => _fetchRealCallLogs(showFeedback: true),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.refresh_rounded, color: AppColors.primaryLight, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Perbarui', style: GoogleFonts.outfit(color: AppColors.primaryLight, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (!_hasCallLogPermission)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141A26),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF222C40)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                InkWell(
+                  onTap: _hasCallLogPermission ? _fetchRealCallLogs : _requestCallLogPermission,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.call_made_rounded, color: AppColors.primaryLight, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Hubungkan Riwayat Telepon Asli',
-                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        Icon(Icons.refresh_rounded, size: 16, color: AppColors.primaryLight),
+                        const SizedBox(width: 4),
+                        Text(
+                          _hasCallLogPermission ? 'Perbarui' : 'Izin Log Telepon',
+                          style: GoogleFonts.outfit(
+                            color: AppColors.primaryLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Beri izin Call Log agar Panggilan Terbaru menampilkan riwayat telepon asli HP Anda (+62 895..., +62 814...).',
-                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.35),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _requestCallLogPermission,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 11),
-                        ),
-                        child: Text('Aktifkan Izin Riwayat Telepon', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              )
-            else if (_realRecentCalls.isEmpty)
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_realRecentCalls.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'Belum ada riwayat panggilan telepon.',
-                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13.5),
+                    _hasContactPermission
+                        ? 'Belum ada riwayat panggilan kontak nyata.'
+                        : 'Izin kontak belum diaktifkan.',
+                    style: GoogleFonts.outfit(
+                      color: AppColors.textSecondary,
+                      fontSize: 13.5,
+                    ),
                   ),
                 ),
               )
@@ -1106,7 +992,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFF1E2636), width: 1)),
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFF1E2636), width: 1),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1122,19 +1010,28 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                                 style: GoogleFonts.outfit(
                                   fontSize: 15.5,
                                   fontWeight: FontWeight.w600,
-                                  color: (item['isSpam'] as bool) ? const Color(0xFFEF4444) : Colors.white,
+                                  color: (item['isSpam'] as bool)
+                                      ? const Color(0xFFEF4444)
+                                      : Colors.white,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
                                   if (item['isSpam'] as bool) ...[
-                                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 15),
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 15,
+                                    ),
                                     const SizedBox(width: 4),
                                   ],
                                   Text(
                                     item['sub'] as String,
-                                    style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white54,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1146,10 +1043,17 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                           children: [
                             Text(
                               item['date'] as String,
-                              style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12.5),
+                              style: GoogleFonts.outfit(
+                                color: Colors.white54,
+                                fontSize: 12.5,
+                              ),
                             ),
                             const SizedBox(width: 6),
-                            const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 18),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: Colors.white38,
+                              size: 18,
+                            ),
                           ],
                         ),
                       ],
@@ -1158,17 +1062,91 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 );
               }),
             const SizedBox(height: 16),
-            if (_callLogs.isNotEmpty)
-              Center(
-                child: TextButton.icon(
-                  onPressed: _showCallHistoryModal,
-                  icon: Text(
-                    'Lihat Riwayat Panggilan Lengkap',
-                    style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.w600),
+            Center(
+              child: TextButton.icon(
+                onPressed: _contacts.isNotEmpty
+                    ? () {
+                        // Munculkan dialog daftar seluruh kontak nyata
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: const Color(0xFF141926),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: Text(
+                              'Semua Kontak Asli (${_contacts.length})',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              height: 400,
+                              child: ListView.builder(
+                                itemCount: _contacts.length,
+                                itemBuilder: (ctx, idx) {
+                                  final c = _contacts[idx];
+                                  final name = _getContactName(c);
+                                  final num = c.phones.first.number;
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(
+                                      name,
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      num,
+                                      style: GoogleFonts.outfit(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(ctx);
+                                      _searchController.text = num;
+                                      _performSearch(num);
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text(
+                                  'Tutup',
+                                  style: GoogleFonts.outfit(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    : _requestContactPermission,
+                icon: Text(
+                  _contacts.isNotEmpty
+                      ? 'Tampilkan Semuanya (${_contacts.length} Kontak)'
+                      : 'Tampilkan Semuanya',
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF2B8CFF),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
                   ),
-                  label: const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B8CFF), size: 18),
+                ),
+                label: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF2B8CFF),
+                  size: 18,
                 ),
               ),
+            ),
             const SizedBox(height: 30),
 
             // -------------------------------------------------------------
@@ -1179,9 +1157,17 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
               children: [
                 Text(
                   'Tag Saya',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: Colors.white54, size: 22),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white54,
+                  size: 22,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -1190,28 +1176,43 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   'Belum ada tag/label khusus untuk nomor Anda.',
-                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                  style: GoogleFonts.outfit(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                ..._userTags.map((t) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF007AFF),
-                    borderRadius: BorderRadius.circular(12),
+                ..._userTags.map(
+                  (t) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF007AFF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '# $t',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    '# $t',
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                )),
+                ),
                 InkWell(
                   onTap: _showAddTagDialog,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E263D),
                       borderRadius: BorderRadius.circular(12),
@@ -1219,7 +1220,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     ),
                     child: Text(
                       '+ Tambah Tag',
-                      style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF2B8CFF),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -1232,7 +1237,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             // -------------------------------------------------------------
             Text(
               'Kontak Cepat',
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 12),
             if (_realQuickContacts.isEmpty)
@@ -1240,24 +1249,48 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    _hasContactPermission ? 'Tidak ada kontak untuk ditampilkan.' : 'Hubungkan kontak perangkat untuk melihat Kontak Cepat asli.',
-                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13.5),
+                    _hasContactPermission
+                        ? 'Tidak ada kontak untuk ditampilkan.'
+                        : 'Hubungkan kontak perangkat untuk melihat Kontak Cepat asli.',
+                    style: GoogleFonts.outfit(
+                      color: AppColors.textSecondary,
+                      fontSize: 13.5,
+                    ),
                   ),
                 ),
               )
             else
               Column(
-                children: _realQuickContacts.map((t) => TagChipCard(tag: t, onVote: (type) => _handleVote(t, type))).toList(),
+                children: _realQuickContacts
+                    .map(
+                      (t) => TagChipCard(
+                        tag: t,
+                        onVote: (type) => _handleVote(t, type),
+                      ),
+                    )
+                    .toList(),
               ),
             const SizedBox(height: 14),
             Center(
               child: TextButton.icon(
-                onPressed: _contacts.isNotEmpty ? () {} : _requestContactPermission,
+                onPressed: _contacts.isNotEmpty
+                    ? () {}
+                    : _requestContactPermission,
                 icon: Text(
-                  _contacts.isNotEmpty ? 'Tampilkan Semua (${_contacts.length} Orang)' : 'Tampilkan Semua',
-                  style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.w600),
+                  _contacts.isNotEmpty
+                      ? 'Tampilkan Semua (${_contacts.length} Orang)'
+                      : 'Tampilkan Semua',
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF2B8CFF),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                label: const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B8CFF), size: 18),
+                label: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF2B8CFF),
+                  size: 18,
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -1280,9 +1313,16 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     children: [
                       Text(
                         '1 orang telah mencari nomor Anda.',
-                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white54,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -1291,13 +1331,21 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                       CircleAvatar(
                         radius: 22,
                         backgroundColor: Colors.white.withValues(alpha: 0.12),
-                        child: const Icon(Icons.person_outline_rounded, color: Colors.white60, size: 24),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white60,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Text(
                           'Anda bisa mencari tahu siapapun yang mencari nomor Anda dengan menggunakan sistem proteksi PhoneRep Komunitas.',
-                          style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, height: 1.45),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
                         ),
                       ),
                     ],
@@ -1326,7 +1374,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             children: [
               Text(
                 'Baru Saja Dilihat',
-                style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white),
+                style: GoogleFonts.outfit(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
               ),
               if (_recentlyViewed.isNotEmpty)
                 InkWell(
@@ -1337,7 +1389,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   },
                   child: Text(
                     'Hapus',
-                    style: GoogleFonts.outfit(color: const Color(0xFF2B8CFF), fontSize: 14.5, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF2B8CFF),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
             ],
@@ -1348,8 +1404,13 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
               padding: const EdgeInsets.all(32),
               child: Center(
                 child: Text(
-                  _contacts.isNotEmpty ? 'Belum ada riwayat pencarian.' : 'Belum ada riwayat nomor yang baru saja dilihat.',
-                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
+                  _contacts.isNotEmpty
+                      ? 'Belum ada riwayat pencarian.'
+                      : 'Belum ada riwayat nomor yang baru saja dilihat.',
+                  style: GoogleFonts.outfit(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             )
@@ -1364,7 +1425,9 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFF1E2636), width: 1)),
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFF1E2636), width: 1),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1373,7 +1436,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                           backgroundColor: item['color'] as Color,
                           child: Text(
                             item['initial'] as String,
-                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -1383,19 +1450,29 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                             children: [
                               Text(
                                 item['name'] as String,
-                                style: GoogleFonts.outfit(fontSize: 15.5, fontWeight: FontWeight.w700, color: Colors.white),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 item['number'] as String,
-                                style: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white54,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Text(
                           item['date'] as String,
-                          style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12.5),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white54,
+                            fontSize: 12.5,
+                          ),
                         ),
                       ],
                     ),
@@ -1431,19 +1508,38 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                     Expanded(
                       child: Text(
                         _phoneRecord!.phoneNumber,
-                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                    TrustMeter(score: _phoneRecord!.trustScore, searchCount: _phoneRecord!.searchCount),
+                    TrustMeter(
+                      score: _phoneRecord!.trustScore,
+                      searchCount: _phoneRecord!.searchCount,
+                    ),
                   ],
                 ),
-                if (_phoneRecord!.carrier != null && _phoneRecord!.carrier!.isNotEmpty) ...[
+                if (_phoneRecord!.carrier != null &&
+                    _phoneRecord!.carrier!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.cell_tower_rounded, color: AppColors.accentCyan, size: 16),
+                      const Icon(
+                        Icons.cell_tower_rounded,
+                        color: AppColors.accentCyan,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
-                      Text('Operator: ${_phoneRecord!.carrier}', style: GoogleFonts.outfit(color: AppColors.accentCyan, fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(
+                        'Operator: ${_phoneRecord!.carrier}',
+                        style: GoogleFonts.outfit(
+                          color: AppColors.accentCyan,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -1457,13 +1553,20 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             children: [
               Text(
                 'Tag & Label (${_phoneRecord!.tags.length})',
-                style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
               ),
               InkWell(
                 onTap: _showAddTagDialog,
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -1471,7 +1574,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
                   ),
                   child: Text(
                     '+ Tambah Tag',
-                    style: GoogleFonts.outfit(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: GoogleFonts.outfit(
+                      color: AppColors.primaryLight,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
@@ -1481,7 +1588,10 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
           if (_phoneRecord!.tags.isEmpty)
             Text(
               'Belum ada label tag untuk nomor ini. Tekan tombol "+ Tambah Tag" untuk memberi label.',
-              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+              style: GoogleFonts.outfit(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
             )
           else
             Wrap(
@@ -1489,11 +1599,20 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
               runSpacing: 8,
               children: _phoneRecord!.tags.map((t) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: t.isSpam ? const Color(0xFFEF4444).withValues(alpha: 0.2) : const Color(0xFF1E263D),
+                    color: t.isSpam
+                        ? const Color(0xFFEF4444).withValues(alpha: 0.2)
+                        : const Color(0xFF1E263D),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: t.isSpam ? const Color(0xFFEF4444) : const Color(0xFF2C3756)),
+                    border: Border.all(
+                      color: t.isSpam
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF2C3756),
+                    ),
                   ),
                   child: Text(
                     '# ${t.labelName}',
@@ -1510,7 +1629,11 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
 
           Text(
             'Daftar Ulasan & Reputasi Komunitas',
-            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 14),
           if (_phoneRecord!.tags.isEmpty)
@@ -1524,28 +1647,48 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
               ),
               child: Column(
                 children: [
-                  Icon(Icons.label_off_rounded, size: 48, color: Colors.white.withValues(alpha: 0.25)),
+                  Icon(
+                    Icons.label_off_rounded,
+                    size: 48,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Belum Ada Ulasan Tag',
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     'Jadilah yang pertama memberikan label apakah nomor ini kurir, penipu, atau rekan bisnis.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+                    style: GoogleFonts.outfit(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 18),
                   ElevatedButton.icon(
                     onPressed: _showAddTagDialog,
                     icon: const Icon(Icons.add, size: 18),
-                    label: Text('Beri Tag Sekarang', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                    label: Text(
+                      'Beri Tag Sekarang',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -1553,7 +1696,14 @@ class _SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver
             )
           else
             Column(
-              children: _phoneRecord!.tags.map((t) => TagChipCard(tag: t, onVote: (type) => _handleVote(t, type))).toList(),
+              children: _phoneRecord!.tags
+                  .map(
+                    (t) => TagChipCard(
+                      tag: t,
+                      onVote: (type) => _handleVote(t, type),
+                    ),
+                  )
+                  .toList(),
             ),
           const SizedBox(height: 48),
         ],
