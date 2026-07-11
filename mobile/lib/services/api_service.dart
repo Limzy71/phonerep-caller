@@ -9,9 +9,9 @@ class ApiService extends ChangeNotifier {
 
   ApiService() {
     if (!kIsWeb && Platform.isAndroid) {
-      // Default menggunakan http://127.0.0.1:3000 via ADB Reverse Tunnel (paling stabil & anti firewall).
-      // Bisa diganti via menu Pengaturan ke IP Wi-Fi PC saat ini: http://192.168.1.159:3000
-      _baseUrl = 'http://127.0.0.1:3000';
+      // Default menggunakan IP Wi-Fi PC saat ini untuk pengujian HP fisik langsung: http://192.168.1.159:3000
+      // Bisa diganti via menu Pengaturan atau otomatis fallback ke http://127.0.0.1:3000 (ADB Tunnel)
+      _baseUrl = 'http://192.168.1.159:3000';
     } else {
       _baseUrl = 'http://localhost:3000';
     }
@@ -49,6 +49,19 @@ class ApiService extends ChangeNotifier {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
+      if (e.toString().contains('Connection refused') || e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
+        final altUrl = _baseUrl.contains('127.0.0.1') ? 'http://192.168.1.159:3000' : 'http://127.0.0.1:3000';
+        try {
+          final retryUri = Uri.parse('$altUrl/phone-lookup/${Uri.encodeComponent(rawNumber)}');
+          final retryRes = await http.get(retryUri, headers: _defaultHeaders).timeout(const Duration(seconds: 10));
+          if (retryRes.statusCode == 200 || retryRes.statusCode == 201) {
+            _baseUrl = altUrl;
+            notifyListeners();
+            final decoded = jsonDecode(retryRes.body) as Map<String, dynamic>;
+            return LookupResponse.fromJson(decoded);
+          }
+        } catch (_) {}
+      }
       throw Exception('Gagal menghubungi server: $e');
     }
   }
@@ -79,6 +92,23 @@ class ApiService extends ChangeNotifier {
         throw Exception('Server error (${response.statusCode}): ${response.body}');
       }
     } catch (e) {
+      if (e.toString().contains('Connection refused') || e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
+        final altUrl = _baseUrl.contains('127.0.0.1') ? 'http://192.168.1.159:3000' : 'http://127.0.0.1:3000';
+        try {
+          final retryUri = Uri.parse('$altUrl/phone-lookup/sync');
+          final payload = {
+            'userId': userId ?? 'user_${DateTime.now().millisecondsSinceEpoch}',
+            'contacts': contacts,
+          };
+          final retryRes = await http.post(retryUri, headers: _defaultHeaders, body: jsonEncode(payload)).timeout(const Duration(seconds: 20));
+          if (retryRes.statusCode == 200 || retryRes.statusCode == 201) {
+            _baseUrl = altUrl;
+            notifyListeners();
+            final decoded = jsonDecode(retryRes.body) as Map<String, dynamic>;
+            return SyncContactResult.fromJson(decoded);
+          }
+        } catch (_) {}
+      }
       throw Exception('Gagal menyinkronkan kontak: $e');
     }
   }
@@ -112,6 +142,26 @@ class ApiService extends ChangeNotifier {
       }
       return null;
     } catch (e) {
+      if (e.toString().contains('Connection refused') || e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
+        final altUrl = _baseUrl.contains('127.0.0.1') ? 'http://192.168.1.159:3000' : 'http://127.0.0.1:3000';
+        try {
+          final retryUri = Uri.parse('$altUrl/phone-lookup/tag');
+          final payload = {
+            'phoneNumberId': phoneNumberId,
+            'labelName': labelName,
+            'userId': userId ?? 'user_${DateTime.now().millisecondsSinceEpoch}',
+          };
+          final retryRes = await http.post(retryUri, headers: _defaultHeaders, body: jsonEncode(payload)).timeout(const Duration(seconds: 10));
+          if (retryRes.statusCode == 200 || retryRes.statusCode == 201) {
+            _baseUrl = altUrl;
+            notifyListeners();
+            final decoded = jsonDecode(retryRes.body) as Map<String, dynamic>;
+            if (decoded['success'] == true && decoded['data'] != null) {
+              return TagItem.fromJson(decoded['data'] as Map<String, dynamic>);
+            }
+          }
+        } catch (_) {}
+      }
       throw Exception('Gagal menambah tag: $e');
     }
   }
