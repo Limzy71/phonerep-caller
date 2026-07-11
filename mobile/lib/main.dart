@@ -49,7 +49,7 @@ class _PhoneRepAppState extends State<PhoneRepApp> {
       animation: _apiService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'PhoneRep Mobile Check',
+          title: 'PhoneRep',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
           home: _isProfileRegistered == null
