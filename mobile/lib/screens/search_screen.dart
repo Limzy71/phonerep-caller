@@ -975,9 +975,32 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D111C),
-      body: SafeArea(
+    return PopScope(
+      canPop: !_isSearchExpanded && _phoneRecord == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Jika sedang di mode pencarian aktif → kembali ke idle
+        if (_isSearchExpanded) {
+          setState(() {
+            _isSearchExpanded = false;
+            _searchController.clear();
+            _searchFocusNode.unfocus();
+          });
+          return;
+        }
+        // Jika sedang menampilkan hasil pencarian → bersihkan hasil
+        if (_phoneRecord != null) {
+          setState(() {
+            _phoneRecord = null;
+            _errorMessage = null;
+            _statusMessage = null;
+            _searchController.clear();
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D111C),
+        body: SafeArea(
         child: Stack(
           children: [
             Positioned.fill(
@@ -1122,6 +1145,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
