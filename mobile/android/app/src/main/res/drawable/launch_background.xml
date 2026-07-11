@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Latar Belakang Gradasi Royal Blue Premium -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="270"
-                android:startColor="#122554"
-                android:centerColor="#0B1530"
-                android:endColor="#0A0D14"
-                android:type="linear" />
-        </shape>
-    </item>
+    <!-- Latar Belakang Deep Royal Blue Premium yang Menyatu dengan Ikon -->
+    <item android:drawable="@color/splash_background" />
 
     <!-- Ikon Aplikasi Di Tengah Layar -->
     <item>
