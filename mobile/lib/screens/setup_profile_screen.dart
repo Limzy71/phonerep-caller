@@ -100,28 +100,13 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.18),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primaryLight.withValues(alpha: 0.4),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.verified_user_rounded,
-                    color: AppColors.primaryLight,
-                    size: 46,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 95,
+                    height: 95,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(height: 28),
