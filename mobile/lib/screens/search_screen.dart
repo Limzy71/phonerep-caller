@@ -67,27 +67,40 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _checkAndLoadContacts();
+        // Berikan delay singkat agar Android merender frame pertama dan menutup splash screen terlebih dahulu
+        Future.delayed(const Duration(milliseconds: 700), () {
+          if (mounted) {
+            _checkAndLoadContacts();
+          }
+        });
       }
     });
   }
 
   Future<void> _checkAndLoadContacts() async {
-    setState(() => _isContactsLoading = true);
-    final contactStatus = await Permission.contacts.status;
-    final callStatus = await Permission.phone.status;
+    try {
+      final contactStatus = await Permission.contacts.status;
+      final callStatus = await Permission.phone.status;
 
-    _hasContactPermission = contactStatus.isGranted;
-    _hasCallLogPermission = callStatus.isGranted;
+      if (mounted) {
+        setState(() {
+          _hasContactPermission = contactStatus.isGranted;
+          _hasCallLogPermission = callStatus.isGranted;
+        });
+      }
 
-    if (_hasContactPermission) {
-      await _fetchRealDeviceContacts();
-    }
-    if (_hasCallLogPermission) {
-      await _fetchRealCallLogs();
-    }
-    if (mounted) {
-      setState(() => _isContactsLoading = false);
+      if (_hasContactPermission) {
+        await _fetchRealDeviceContacts();
+      }
+      if (_hasCallLogPermission) {
+        await _fetchRealCallLogs();
+      }
+    } catch (e) {
+      debugPrint('Error loading initial contacts/call logs: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isContactsLoading = false);
+      }
     }
   }
 
@@ -115,6 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() {
           _callLogs = entries
               .where((e) => (e.number ?? '').trim().isNotEmpty)
+              .take(60)
               .toList();
         });
       }
