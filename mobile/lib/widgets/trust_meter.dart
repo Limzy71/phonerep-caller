@@ -109,7 +109,7 @@ class TrustMeter extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Pencarian Komunitas',
+                    'Total Pencarian',
                     style: GoogleFonts.outfit(
                       color: AppColors.textSecondary,
                       fontSize: 11,

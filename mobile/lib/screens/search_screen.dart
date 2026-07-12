@@ -319,7 +319,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 20),
               if (_myPhoneTags.isNotEmpty) ...[
                 Text(
-                  'Label Komunitas Terdeteksi (${_myPhoneTags.length})',
+                  'Label Terdeteksi (${_myPhoneTags.length})',
                   style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
@@ -1119,7 +1119,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    _phoneRecord == null ? 'Tambah Tag Saya' : 'Tambah Tag Komunitas',
+                    _phoneRecord == null ? 'Tambah Tag Saya' : 'Tambah Label Baru',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1132,7 +1132,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Text(
                 _phoneRecord == null
                     ? 'Buat label identitas atau catatan khusus untuk nomor Anda sendiri yang tersimpan di Tag Saya.'
-                    : 'Bantu komunitas mengenali nomor ini dengan memberikan label nama, profesi, atau peringatan.',
+                    : 'Bantu pengguna lain mengenali nomor ini dengan memberikan label nama, profesi, atau kategori.',
                 style: GoogleFonts.outfit(
                   color: AppColors.textSecondary,
                   fontSize: 13,
@@ -2396,7 +2396,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               _isMyStatsLoading
                                   ? 'Memeriksa status proteksi nomor Anda...'
                                   : (_myPhoneTags.isNotEmpty
-                                      ? '${_myPhoneTags.length} Label Penanda Komunitas Terdeteksi'
+                                      ? '${_myPhoneTags.length} Label Penanda Terdeteksi'
                                       : (_myPhoneSearchCount > 0
                                           ? '$_myPhoneSearchCount aktivitas pencarian terhadap nomor Anda.'
                                           : 'Nomor Anda dalam pemantauan proteksi aktif.')),
@@ -2430,9 +2430,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           Expanded(
                             child: Text(
                               _myPhoneTags.isNotEmpty
-                                  ? 'Terdeteksi ${_myPhoneTags.length} nama dari kontak komunitas (${_myPhoneTags.take(2).map((t) => '"${t.labelName}"').join(', ')}${_myPhoneTags.length > 2 ? ', dst' : ''}) • Diperiksa $_myPhoneSearchCount kali. Tekan untuk melihat analisis real-time.'
+                                  ? 'Terdeteksi ${_myPhoneTags.length} nama penanda (${_myPhoneTags.take(2).map((t) => '"${t.labelName}"').join(', ')}${_myPhoneTags.length > 2 ? ', dst' : ''}) • Diperiksa $_myPhoneSearchCount kali. Tekan untuk melihat analisis detail.'
                                   : (_myPhoneSearchCount > 0
-                                      ? 'Reputasi saat ini: ${_myPhoneTrustScore.toStringAsFixed(0)}% Aman. Tekan di sini untuk melihat analisis detail aktivitas pencarian dan perlindungan privasi PhoneRep Komunitas.'
+                                      ? 'Reputasi saat ini: ${_myPhoneTrustScore.toStringAsFixed(0)}% Aman. Tekan di sini untuk melihat analisis detail aktivitas pencarian dan perlindungan privasi.'
                                       : 'Belum ada aktivitas pencarian mencurigakan terhadap nomor Anda. Tekan di sini untuk memeriksa status perlindungan & jejak digital Anda.'),
                               style: GoogleFonts.outfit(
                                 color: Colors.white70,
@@ -2717,7 +2717,7 @@ class _SearchScreenState extends State<SearchScreen> {
           const SizedBox(height: 28),
 
           Text(
-            'Daftar Ulasan & Reputasi Komunitas',
+            'Daftar Ulasan & Reputasi',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w800,

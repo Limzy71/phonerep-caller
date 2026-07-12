@@ -34,6 +34,11 @@ class TagChipCard extends StatelessWidget {
         : '#';
     final badgeNumber = tag.upvotes > 0 ? tag.upvotes : 1;
 
+    bool isPhoneNumber(String text) {
+      if (text.isEmpty) return false;
+      return RegExp(r'^(\+)?\d[\d\s\-]+$').hasMatch(text);
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -98,7 +103,7 @@ class TagChipCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    tag.phoneNumberId.isNotEmpty ? tag.phoneNumberId : 'Diverifikasi oleh Komunitas',
+                    isPhoneNumber(tag.phoneNumberId) ? tag.phoneNumberId : 'Saran Nama Kontak',
                     style: GoogleFonts.outfit(
                       color: Colors.white54,
                       fontSize: 12.5,
