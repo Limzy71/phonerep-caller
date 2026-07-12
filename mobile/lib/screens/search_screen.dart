@@ -786,13 +786,39 @@ class _SearchScreenState extends State<SearchScreen> {
     return combined.take(5).toList();
   }
 
-  // Getter Kontak Cepat Asli dari Kontak Perangkat (Tanpa Angka Hash Palsu)
+  // Getter Kontak Cepat Asli dari Kontak Perangkat (Maksimal 5, 1 alfabet 1 kontak loncat berurutan A, B, dst)
   List<TagItem> get _realQuickContacts {
     if (_contacts.isEmpty) return [];
-    return _contacts.take(12).map((c) {
+
+    final sorted = List.of(_contacts)
+      ..sort((a, b) => _getContactName(a).toLowerCase().compareTo(_getContactName(b).toLowerCase()));
+
+    final Set<String> usedLetters = {};
+    final List<Contact> selectedContacts = [];
+
+    for (final c in sorted) {
+      if (selectedContacts.length >= 5) break;
+      final name = _getContactName(c).trim();
+      if (name.isEmpty) continue;
+      final firstLetter = name[0].toUpperCase();
+      if (firstLetter.contains(RegExp(r'[A-Z]')) && !usedLetters.contains(firstLetter)) {
+        usedLetters.add(firstLetter);
+        selectedContacts.add(c);
+      }
+    }
+
+    if (selectedContacts.length < 5) {
+      for (final c in sorted) {
+        if (selectedContacts.length >= 5) break;
+        if (!selectedContacts.contains(c)) {
+          selectedContacts.add(c);
+        }
+      }
+    }
+
+    return selectedContacts.map((c) {
       final name = _getContactName(c);
-      final num = c.phones.first.number;
-      // Gunakan jumlah nyata nomor telepon/entri yang tercatat di kontak HP
+      final num = c.phones.isNotEmpty ? c.phones.first.number : '';
       final realCount = c.phones.isNotEmpty ? c.phones.length : 1;
       return TagItem(
         id: c.id,

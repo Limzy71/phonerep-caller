@@ -637,30 +637,39 @@ export class PhoneLookupService {
   }
 
   async resetPhoneNumberData(rawNumber: string): Promise<{ success: boolean; message: string }> {
-    let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
-    if (number.startsWith('08')) {
-      number = '+62' + number.substring(1);
-    } else if (number.startsWith('628')) {
-      number = '+' + number;
+    let numberE164 = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
+    let number08 = numberE164;
+    let number628 = numberE164;
+
+    if (numberE164.startsWith('08')) {
+      numberE164 = '+62' + numberE164.substring(1);
+      number08 = '0' + numberE164.substring(3);
+      number628 = '62' + numberE164.substring(3);
+    } else if (numberE164.startsWith('628')) {
+      numberE164 = '+' + numberE164;
+      number08 = '0' + numberE164.substring(3);
+      number628 = '62' + numberE164.substring(3);
+    } else if (numberE164.startsWith('+628')) {
+      number08 = '0' + numberE164.substring(3);
+      number628 = '62' + numberE164.substring(3);
     }
 
     try {
-      const phoneRecord = await this.prisma.phoneNumber.findUnique({
-        where: { phoneNumber: number },
+      await this.prisma.phoneNumber.deleteMany({
+        where: {
+          phoneNumber: {
+            in: [numberE164, number08, number628, rawNumber.trim()],
+          },
+        },
       });
 
-      if (phoneRecord) {
-        await this.prisma.phoneNumber.delete({
-          where: { id: phoneRecord.id },
-        });
-      }
-
-      this.otpStore.delete(number);
+      this.otpStore.delete(numberE164);
+      this.otpStore.delete(number08);
       this.otpStore.delete(rawNumber.trim());
 
       return {
         success: true,
-        message: `Seluruh data untuk nomor ${number} berhasil dihapus dari database.`,
+        message: `Seluruh data untuk nomor ${numberE164} berhasil dihapus total dari database.`,
       };
     } catch (error: any) {
       console.error('Error resetting phone data:', error);
