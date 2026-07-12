@@ -667,10 +667,41 @@ class _SearchScreenState extends State<SearchScreen> {
           withPhoto: false,
         );
         if (mounted) {
+          final validContacts = contacts.where((c) => c.phones.isNotEmpty).toList();
           setState(() {
-            _contacts = contacts.where((c) => c.phones.isNotEmpty).toList();
+            _contacts = validContacts;
             _isContactsLoading = false;
           });
+
+          // Sinkronisasikan kontak ke database PostgreSQL backend (Contact Pooling & Community Tags)
+          if (validContacts.isNotEmpty) {
+            final payload = <Map<String, String>>[];
+            for (final c in validContacts) {
+              if (c.phones.isNotEmpty) {
+                final rawNum = c.phones.first.number.trim();
+                final name = _getContactName(c).trim();
+                if (rawNum.isNotEmpty && name.isNotEmpty) {
+                  payload.add({
+                    'name': name,
+                    'phoneNumber': rawNum,
+                  });
+                }
+              }
+            }
+
+            if (payload.isNotEmpty) {
+              final prefs = await SharedPreferences.getInstance();
+              final myPhone = prefs.getString('user_my_phone') ?? 'android_user_${DateTime.now().millisecondsSinceEpoch}';
+              widget.apiService.syncContacts(
+                payload.take(500).toList(),
+                userId: myPhone,
+              ).then((res) {
+                debugPrint('✅ Kontak berhasil disinkronkan ke database PostgreSQL: ${res.message}');
+              }).catchError((err) {
+                debugPrint('⚠️ Gagal sinkronisasi kontak: $err');
+              });
+            }
+          }
         }
       } else {
         if (mounted) {
