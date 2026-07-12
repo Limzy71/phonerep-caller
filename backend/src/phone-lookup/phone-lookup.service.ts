@@ -187,7 +187,7 @@ export class PhoneLookupService {
       data: {
         phoneNumber: number,
         countryCode: countryCode,
-        searchCount: 1,
+        searchCount: skipIncrement ? 0 : 1,
         trustScore: 82.5, // Skor awal aman untuk nomor terdeteksi operator sah
         tags: {
           create: tagsToCreate,
