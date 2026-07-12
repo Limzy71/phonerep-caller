@@ -708,14 +708,30 @@ export class PhoneLookupService {
       number628 = '62' + numberE164.substring(3);
     }
 
-    const allUserVariants = Array.from(new Set([numberE164, number08, number628, rawNumber.trim()]));
+    const allNumberVariants = Array.from(new Set([numberE164, number08, number628, rawNumber.trim()]));
 
     try {
-      // 1. Temukan semua Tag/Ulasan yang pernah disinkronkan oleh pengguna ini (berdasarkan userId/variasi nomornya)
+      // 1. Cari semua kemungkinan User yang terkait (via email dengan semua variasi nomor)
+      const emailVariants = allNumberVariants.map((n) => `${n}@mobile.phonerep.komunitas`);
+      const users = await this.prisma.user.findMany({
+        where: {
+          OR: [
+            { id: { in: allNumberVariants } }, // userId tersimpan sebagai nomor HP langsung
+            { email: { in: emailVariants } },   // email berformat nomor@domain
+          ],
+        },
+        select: { id: true },
+      });
+
+      // Kumpulkan semua kemungkinan userId (UUID dari tabel User + variasi nomor HP langsung)
+      const userUuids = users.map((u) => u.id);
+      const allUserIdVariants = Array.from(new Set([...allNumberVariants, ...userUuids]));
+
+      // 2. Temukan semua Tag yang dibuat oleh pengguna ini (pakai semua varian ID)
       const userTags = await this.prisma.tag.findMany({
         where: {
           userId: {
-            in: allUserVariants,
+            in: allUserIdVariants,
           },
         },
         select: {
@@ -727,27 +743,26 @@ export class PhoneLookupService {
       const tagIds = userTags.map((t) => t.id);
       const syncedPhoneIds = Array.from(new Set(userTags.map((t) => t.phoneNumberId)));
 
-      // 2. Hapus semua vote yang terkait dengan tag pengguna
+      // 3. Hapus semua TagVote terkait
       if (tagIds.length > 0) {
         await this.prisma.tagVote.deleteMany({
-          where: {
-            tagId: {
-              in: tagIds,
-            },
-          },
+          where: { tagId: { in: tagIds } },
         });
 
-        // 3. Hapus semua Tag kontak yang disinkronkan oleh pengguna ini
+        // 4. Hapus semua Tag yang pernah dibuat pengguna ini
         await this.prisma.tag.deleteMany({
-          where: {
-            id: {
-              in: tagIds,
-            },
-          },
+          where: { id: { in: tagIds } },
         });
       }
 
-      // 4. Hapus nomor-nomor telepon yang disinkronkan oleh pengguna ini yang kini tidak lagi memiliki tag lain (bersih total)
+      // 5. Hapus juga semua TagVote yang dilakukan oleh user ini (bukan hanya yang dibuat)
+      if (userUuids.length > 0) {
+        await this.prisma.tagVote.deleteMany({
+          where: { userId: { in: allUserIdVariants } },
+        });
+      }
+
+      // 6. Bersihkan nomor telepon yang tidak punya tag lagi (orphan cleanup)
       if (syncedPhoneIds.length > 0) {
         for (const pid of syncedPhoneIds) {
           const remainingTagsCount = await this.prisma.tag.count({
@@ -761,26 +776,27 @@ export class PhoneLookupService {
         }
       }
 
-      // 5. Hapus nomor telepon utama milik pengguna itu sendiri dari tabel phoneNumber
+      // 7. Hapus nomor telepon milik pengguna itu sendiri dari tabel phoneNumber
       await this.prisma.phoneNumber.deleteMany({
         where: {
           phoneNumber: {
-            in: allUserVariants,
+            in: allNumberVariants,
           },
         },
       });
 
-      // 6. Hapus akun pengguna dari tabel User
+      // 8. Hapus akun User dari tabel users
       await this.prisma.user.deleteMany({
         where: {
-          id: {
-            in: allUserVariants,
-          },
+          OR: [
+            { id: { in: allUserIdVariants } },
+            { email: { in: emailVariants } },
+          ],
         },
       });
 
-      // 7. Bersihkan cache OTP
-      for (const variant of allUserVariants) {
+      // 9. Bersihkan cache OTP
+      for (const variant of allNumberVariants) {
         this.otpStore.delete(variant);
       }
 
