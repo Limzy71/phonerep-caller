@@ -433,7 +433,25 @@ export class PhoneLookupService {
                 },
               },
             });
+
+            // Catat vote awal jika user terverifikasi
+            if (validUserId) {
+              const newTag = await this.prisma.tag.findFirst({
+                where: { phoneNumberId: phoneRecord.id, labelName: cleanName },
+              });
+              if (newTag) {
+                await this.prisma.tagVote.create({
+                  data: {
+                    tagId: newTag.id,
+                    userId: validUserId,
+                    voteType: 'UPVOTE',
+                  },
+                }).catch(() => {});
+              }
+            }
+
             syncedCount++;
+            continue; // Lanjut ke kontak berikutnya (mencegah double increment)
           } catch (createErr) {
             // Jika terjadi race condition / nomor duplikat bersamaan, ambil ulang dan tambahkan tag
             phoneRecord = await this.prisma.phoneNumber.findUnique({
@@ -455,12 +473,39 @@ export class PhoneLookupService {
           });
 
           if (existingTag) {
-            await this.prisma.tag.update({
-              where: { id: existingTag.id },
-              data: { upvotes: { increment: 1 } },
-            });
+            // Periksa apakah user yang sama sudah vote untuk mencegah double vote
+            let alreadyVoted = false;
+            if (validUserId) {
+              const vote = await this.prisma.tagVote.findUnique({
+                where: {
+                  tagId_userId: {
+                    tagId: existingTag.id,
+                    userId: validUserId,
+                  },
+                },
+              });
+              if (vote) {
+                alreadyVoted = true;
+              }
+            }
+
+            if (!alreadyVoted) {
+              await this.prisma.tag.update({
+                where: { id: existingTag.id },
+                data: { upvotes: { increment: 1 } },
+              });
+              if (validUserId) {
+                await this.prisma.tagVote.create({
+                  data: {
+                    tagId: existingTag.id,
+                    userId: validUserId,
+                    voteType: 'UPVOTE',
+                  },
+                }).catch(() => {});
+              }
+            }
           } else {
-            await this.prisma.tag.create({
+            const newTag = await this.prisma.tag.create({
               data: {
                 phoneNumberId: phoneRecord.id,
                 labelName: cleanName,
@@ -470,6 +515,15 @@ export class PhoneLookupService {
                 downvotes: 0,
               },
             });
+            if (validUserId) {
+              await this.prisma.tagVote.create({
+                data: {
+                  tagId: newTag.id,
+                  userId: validUserId,
+                  voteType: 'UPVOTE',
+                },
+              }).catch(() => {});
+            }
           }
           syncedCount++;
         }

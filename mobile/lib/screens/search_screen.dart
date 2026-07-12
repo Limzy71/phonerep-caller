@@ -696,15 +696,27 @@ class _SearchScreenState extends State<SearchScreen> {
           // Sinkronisasikan kontak ke database PostgreSQL backend (Contact Pooling & Community Tags)
           if (validContacts.isNotEmpty) {
             final payload = <Map<String, String>>[];
+            final seenKeys = <String>{};
             for (final c in validContacts) {
               if (c.phones.isNotEmpty) {
                 final rawNum = c.phones.first.number.trim();
                 final name = _getContactName(c).trim();
                 if (rawNum.isNotEmpty && name.isNotEmpty) {
-                  payload.add({
-                    'name': name,
-                    'phoneNumber': rawNum,
-                  });
+                  // Normalisasi nomor secara lokal untuk deteksi duplikat
+                  String norm = rawNum.replaceAll(RegExp(r'[\s\-\(\)\.]+'), '');
+                  if (norm.startsWith('08')) {
+                    norm = '+62${norm.substring(1)}';
+                  } else if (norm.startsWith('628')) {
+                    norm = '+$norm';
+                  }
+                  final key = '${norm}_${name.toLowerCase()}';
+                  if (!seenKeys.contains(key)) {
+                    seenKeys.add(key);
+                    payload.add({
+                      'name': name,
+                      'phoneNumber': rawNum,
+                    });
+                  }
                 }
               }
             }
