@@ -2295,85 +2295,80 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-
-            // -------------------------------------------------------------
-            // 3. KONTAK CEPAT & DAFTAR ULASAN (REAL DARI KONTAK PERANGKAT)
-            // -------------------------------------------------------------
-            Text(
-              'Kontak Cepat',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
+            if (_hasContactPermission) ...[
+              const SizedBox(height: 28),
+              Text(
+                'Kontak Cepat',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            if (_hasContactPermission) ...
-              [
-                if (_realQuickContacts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text(
-                        'Tidak ada kontak untuk ditampilkan.',
-                        style: GoogleFonts.outfit(
-                          color: AppColors.textSecondary,
-                          fontSize: 13.5,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Column(
-                    children: _realQuickContacts
-                        .map(
-                          (t) {
-                            final dbCount = _quickContactTagCounts[t.phoneNumberId];
-                            final displayTag = TagItem(
-                              id: t.id,
-                              phoneNumberId: t.phoneNumberId,
-                              labelName: t.labelName,
-                              upvotes: dbCount ?? t.upvotes,
-                              isSpam: t.isSpam,
-                            );
-                            return TagChipCard(
-                              tag: displayTag,
-                              onVote: (type) => _handleVote(t, type),
-                              onTap: () {
-                                if (t.phoneNumberId.isNotEmpty) {
-                                  _searchController.text = t.phoneNumberId;
-                                  _performSearch(t.phoneNumberId);
-                                }
-                              },
-                            );
-                          },
-                        )
-                        .toList(),
-                  ),
-                if (_contacts.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: _showAllContactsModal,
-                      icon: Text(
-                        'Tampilkan Semua (${_contacts.length} Orang)',
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF2B8CFF),
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      label: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF2B8CFF),
-                        size: 18,
+              const SizedBox(height: 12),
+              if (_realQuickContacts.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: Text(
+                      'Tidak ada kontak untuk ditampilkan.',
+                      style: GoogleFonts.outfit(
+                        color: AppColors.textSecondary,
+                        fontSize: 13.5,
                       ),
                     ),
                   ),
-                ],
+                )
+              else
+                Column(
+                  children: _realQuickContacts
+                      .map(
+                        (t) {
+                          final dbCount = _quickContactTagCounts[t.phoneNumberId];
+                          final displayTag = TagItem(
+                            id: t.id,
+                            phoneNumberId: t.phoneNumberId,
+                            labelName: t.labelName,
+                            upvotes: dbCount ?? t.upvotes,
+                            isSpam: t.isSpam,
+                          );
+                          return TagChipCard(
+                            tag: displayTag,
+                            onVote: (type) => _handleVote(t, type),
+                            onTap: () {
+                              if (t.phoneNumberId.isNotEmpty) {
+                                _searchController.text = t.phoneNumberId;
+                                _performSearch(t.phoneNumberId);
+                              }
+                            },
+                          );
+                        },
+                      )
+                      .toList(),
+                ),
+              if (_contacts.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _showAllContactsModal,
+                    icon: Text(
+                      'Tampilkan Semua (${_contacts.length} Orang)',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF2B8CFF),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    label: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF2B8CFF),
+                      size: 18,
+                    ),
+                  ),
+                ),
               ],
-            const SizedBox(height: 32),
+            ],
+            const SizedBox(height: 28),
 
             // -------------------------------------------------------------
             // 4. MEMUNCULKAN DAFTAR ORANG YANG MENCARI NOMOR PENGGUNA (Gambar 4 & 5)
