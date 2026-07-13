@@ -1283,13 +1283,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 12),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
                     child: Row(
                       children: ['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Semua'].map((filterStr) {
                         final isSel = currentFilter == filterStr;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
-                            label: Text(filterStr, style: GoogleFonts.outfit(color: isSel ? Colors.white : AppColors.textSecondary, fontWeight: isSel ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+                            visualDensity: VisualDensity.compact,
+                            labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                            label: Text(
+                              filterStr,
+                              style: GoogleFonts.outfit(
+                                color: isSel ? Colors.white : AppColors.textSecondary,
+                                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
                             selected: isSel,
                             selectedColor: const Color(0xFF007AFF),
                             backgroundColor: const Color(0xFF1E263D),
@@ -1308,7 +1318,46 @@ class _SearchScreenState extends State<SearchScreen> {
                   Expanded(
                     child: filteredLogs.isEmpty
                         ? Center(
-                            child: Text('Tidak ada riwayat panggilan untuk filter "$currentFilter".', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF1E263D),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.phone_disabled_rounded,
+                                      size: 32,
+                                      color: Colors.white38,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    'Belum Ada Panggilan $currentFilter',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Riwayat panggilan untuk filter ini belum tersedia atau kosong.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.outfit(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           )
                         : ListView.builder(
                             itemCount: filteredLogs.length,
@@ -2153,25 +2202,27 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 );
               }),
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton.icon(
-                onPressed: _showAllCallLogsModal,
-                icon: Text(
-                  'Tampilkan Semuanya ($_callLogFilterTime)',
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF2B8CFF),
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
+            if (_hasCallLogPermission && _hasContactPermission && _realRecentCalls.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _showAllCallLogsModal,
+                  icon: Text(
+                    'Tampilkan Semuanya ($_callLogFilterTime)',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF2B8CFF),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  label: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF2B8CFF),
+                    size: 18,
                   ),
                 ),
-                label: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF2B8CFF),
-                  size: 18,
-                ),
               ),
-            ),
+            ],
             const SizedBox(height: 30),
 
             // -------------------------------------------------------------
