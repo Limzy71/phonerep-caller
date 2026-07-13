@@ -2271,28 +2271,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ),
-                InkWell(
-                  onTap: _showAddTagDialog,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E263D),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF2B8CFF)),
-                    ),
-                    child: Text(
-                      '+ Tambah Tag',
-                      style: GoogleFonts.outfit(
-                        color: const Color(0xFF2B8CFF),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
             if (_hasContactPermission) ...[
