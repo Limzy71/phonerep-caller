@@ -110,11 +110,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           _otpController.clear();
         });
         _focusNode.requestFocus();
-        AppToast.show(
-          context,
-          message: _errorMessage!,
-          type: ToastType.error,
-        );
       }
       return;
     }
