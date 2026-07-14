@@ -81,7 +81,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       widget.apiService.sendOtp(widget.phone);
       AppToast.show(
         context,
-        message: '📩 Kode OTP baru berhasil dikirim ulang ke nomor WhatsApp Anda.',
+        message: 'Kode OTP baru berhasil dikirim ulang.',
         type: ToastType.success,
       );
     }

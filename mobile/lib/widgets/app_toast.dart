@@ -213,7 +213,7 @@ class _AppToastWidgetState extends State<_AppToastWidget>
 
   Widget _buildCard(Color accent, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(16),
@@ -242,7 +242,7 @@ class _AppToastWidgetState extends State<_AppToastWidget>
             ),
             child: Icon(icon, color: accent, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // ─── Pesan ───
           Expanded(
@@ -252,7 +252,7 @@ class _AppToastWidgetState extends State<_AppToastWidget>
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.outfit(
                 color: Colors.white,
-                fontSize: 13.5,
+                fontSize: 13.0,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
               ),
