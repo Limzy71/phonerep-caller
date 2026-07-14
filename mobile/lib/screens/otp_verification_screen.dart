@@ -64,9 +64,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   void _onOtpChanged() {
     if (mounted) {
-      setState(() {
-        _errorMessage = null;
-      });
+      if (_errorMessage != null && _otpController.text.isNotEmpty) {
+        setState(() {
+          _errorMessage = null;
+        });
+      }
       if (_otpController.text.length == 6 && !_isLoading) {
         _verifyAndProceed();
       }
@@ -108,6 +110,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           _otpController.clear();
         });
         _focusNode.requestFocus();
+        AppToast.show(
+          context,
+          message: _errorMessage!,
+          type: ToastType.error,
+        );
       }
       return;
     }
