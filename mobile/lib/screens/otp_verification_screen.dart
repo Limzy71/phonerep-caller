@@ -272,8 +272,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         }
       },
       child: Container(
-        width: 48,
-        height: 56,
+        width: 46,
+        height: 50,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: hasChar
@@ -323,290 +323,303 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icon Security Badge
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primaryLight,
-                        AppColors.primary,
-                        Color(0xFF0D1B3E),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 26,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(2.5),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFF101624),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.mobile_friendly_rounded,
-                        size: 44,
-                        color: AppColors.primaryLight,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Verifikasi Keamanan OTP',
-                  style: GoogleFonts.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text: 'Kami telah mengirimkan 6 digit kode keamanan via ',
-                      ),
-                      TextSpan(
-                        text: 'WhatsApp',
-                        style: GoogleFonts.outfit(
-                          color: AppColors.primaryLight,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const TextSpan(text: ' ke nomor telepon Anda:\n\n'),
-                      TextSpan(
-                        text: widget.phone,
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.edit_rounded, size: 14, color: AppColors.primaryLight),
-                  label: Text(
-                    'Ganti Nomor Telepon',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      color: AppColors.primaryLight,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Invisible TextField handling real keyboard input (placed off-screen and disabled selection to prevent OS cursor handles)
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0,
-                        child: TextField(
-                          controller: _otpController,
-                          focusNode: _focusNode,
-                          enabled: _lockoutUntil == null, // Nonaktifkan input jika terblokir
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          showCursor: false,
-                          enableInteractiveSelection: false, // 💡 Matikan selection handle / titik kursor OS
-                          style: const TextStyle(color: Colors.transparent),
-                          decoration: const InputDecoration(
-                            counterText: '',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Visual 6 digit boxes updated instantly without delay
-                    ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _otpController,
-                      builder: (context, value, _) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(6, (index) => _buildDigitBox(index)),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                if (_errorMessage != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 1),
-                          child: Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: GoogleFonts.outfit(
-                              color: Colors.redAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
+                        // Icon Security Badge
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.primaryLight,
+                                AppColors.primary,
+                                Color(0xFF0D1B3E),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(2.0),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF101624),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.mobile_friendly_rounded,
+                                size: 34,
+                                color: AppColors.primaryLight,
+                              ),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Verifikasi Keamanan OTP',
+                          style: GoogleFonts.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: GoogleFonts.outfit(
+                              fontSize: 13.5,
+                              color: AppColors.textSecondary,
+                              height: 1.35,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text: 'Kami telah mengirimkan 6 digit kode keamanan via ',
+                              ),
+                              TextSpan(
+                                text: 'WhatsApp',
+                                style: GoogleFonts.outfit(
+                                  color: AppColors.primaryLight,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const TextSpan(text: ' ke nomor telepon Anda:\n'),
+                              TextSpan(
+                                text: widget.phone,
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        TextButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.edit_rounded, size: 14, color: AppColors.primaryLight),
+                          label: Text(
+                            'Ganti Nomor Telepon',
+                            style: GoogleFonts.outfit(
+                              fontSize: 13,
+                              color: AppColors.primaryLight,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Invisible TextField handling real keyboard input
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              child: Opacity(
+                                opacity: 0,
+                                child: TextField(
+                                  controller: _otpController,
+                                  focusNode: _focusNode,
+                                  enabled: _lockoutUntil == null,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  showCursor: false,
+                                  enableInteractiveSelection: false,
+                                  style: const TextStyle(color: Colors.transparent),
+                                  decoration: const InputDecoration(
+                                    counterText: '',
+                                    border: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Visual 6 digit boxes updated instantly without delay
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _otpController,
+                              builder: (context, value, _) {
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(6, (index) => _buildDigitBox(index)),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 1),
+                                  child: Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.redAccent,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+
+                        // Security Trust Banner
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentGreen.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 1),
+                                child: Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Keamanan Terjamin: Kode OTP dikirim via WhatsApp resmi. Jangan bagikan kepada siapapun demi keamanan.',
+                                  style: GoogleFonts.outfit(
+                                    color: AppColors.accentGreen,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Verify Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: (_isLoading || _lockoutUntil != null) ? null : _verifyAndProceed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 4,
+                              shadowColor: AppColors.primary.withValues(alpha: 0.5),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    'Verifikasi Sekarang',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Countdown / Resend
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _secondsRemaining > 0
+                                  ? 'Belum menerima kode OTP? Kirim ulang dalam '
+                                  : 'Belum menerima kode OTP? ',
+                              style: GoogleFonts.outfit(
+                                color: AppColors.textSecondary,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            if (_secondsRemaining > 0)
+                              Text(
+                                '0:${_secondsRemaining.toString().padLeft(2, '0')}',
+                                style: GoogleFonts.outfit(
+                                  color: AppColors.primaryLight,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                ),
+                              )
+                            else
+                              TextButton(
+                                onPressed: _lockoutUntil != null ? null : _resendCode,
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Kirim Ulang Kode OTP',
+                                  style: GoogleFonts.outfit(
+                                    color: AppColors.primaryLight,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                ],
-
-                // Security Trust Banner
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 1),
-                        child: Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Keamanan Terjamin: Kode OTP dikirim via WhatsApp resmi. Jangan bagikan kepada siapapun demi keamanan.',
-                          style: GoogleFonts.outfit(
-                            color: AppColors.accentGreen,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                            height: 1.38,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                const SizedBox(height: 28),
-
-                // Verify Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: (_isLoading || _lockoutUntil != null) ? null : _verifyAndProceed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 4,
-                      shadowColor: AppColors.primary.withValues(alpha: 0.5),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : Text(
-                            'Verifikasi Sekarang',
-                            style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Countdown / Resend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _secondsRemaining > 0
-                          ? 'Belum menerima kode OTP? Kirim ulang dalam '
-                          : 'Belum menerima kode OTP? ',
-                      style: GoogleFonts.outfit(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                    if (_secondsRemaining > 0)
-                      Text(
-                        '0:${_secondsRemaining.toString().padLeft(2, '0')}',
-                        style: GoogleFonts.outfit(
-                          color: AppColors.primaryLight,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      )
-                    else
-                      TextButton(
-                        onPressed: _lockoutUntil != null ? null : _resendCode,
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          'Kirim Ulang Kode OTP',
-                          style: GoogleFonts.outfit(
-                            color: AppColors.primaryLight,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
