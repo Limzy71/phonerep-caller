@@ -59,7 +59,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         setState(() {
           _lockoutUntil = lockoutTime;
           _lockoutSecondsRemaining = lockoutTime.difference(DateTime.now()).inSeconds;
-          _errorMessage = response['message']?.toString().replaceAll('🔒 ', '');
+          _errorMessage = 'Percobaan salah 5x. Nomor diblokir sementara ${_lockoutSecondsRemaining}s lagi.';
           
           // Hapus input untuk mencegah submission
           _otpController.value = const TextEditingValue(
@@ -464,20 +464,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                 if (_errorMessage != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
-                        const SizedBox(width: 8),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: GoogleFonts.outfit(color: Colors.redAccent, fontSize: 13),
+                            style: GoogleFonts.outfit(
+                              color: Colors.redAccent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ],
@@ -488,24 +497,28 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                 // Security Trust Banner
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: AppColors.accentGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.3)),
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 20),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 1),
+                        child: Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 20),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Keamanan Terjamin: Kode OTP dikirim melalui WhatsApp resmi. Jangan bagikan kode kepada siapa pun demi keamanan akun.',
                           style: GoogleFonts.outfit(
                             color: AppColors.accentGreen,
-                            fontSize: 12.5,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            height: 1.35,
+                            height: 1.4,
                           ),
                         ),
                       ),
