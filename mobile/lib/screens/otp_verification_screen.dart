@@ -513,12 +513,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Keamanan Terjamin: Kode OTP dikirim melalui WhatsApp resmi. Jangan bagikan kode kepada siapa pun demi keamanan akun.',
+                          'Keamanan Terjamin: Kode OTP dikirim via WhatsApp resmi. Jangan bagikan kepada siapapun demi keamanan.',
                           style: GoogleFonts.outfit(
                             color: AppColors.accentGreen,
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            height: 1.4,
+                            height: 1.38,
                           ),
                         ),
                       ),
