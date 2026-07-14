@@ -280,11 +280,30 @@ export class PhoneLookupService {
       };
     }
 
+    let validUserId: string | null = null;
+    if (userId) {
+      try {
+        const userRecord = await this.prisma.user.upsert({
+          where: { id: userId },
+          update: {},
+          create: {
+            id: userId,
+            email: `${userId}@mobile.phonerep.komunitas`,
+            password: 'mobile-tag-hash',
+            name: 'Pengguna Komunitas',
+          },
+        });
+        validUserId = userRecord.id;
+      } catch (e) {
+        validUserId = null;
+      }
+    }
+
     const newTag = await this.prisma.tag.create({
       data: {
         phoneNumberId,
         labelName: cleanLabel,
-        userId: userId || null,
+        userId: validUserId,
         isSpam: false,
         upvotes: 1,
       },
@@ -311,17 +330,28 @@ export class PhoneLookupService {
       };
     }
 
-    // 2. Cek apakah user ada
-    const user = await this.prisma.user.findUnique({
+    // 2. Pastikan user terdaftar di database (jika belum, auto-create untuk pengguna aplikasi mobile komunitas)
+    let user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (!user) {
-      return {
-        success: false,
-        message: 'Pengguna tidak terdaftar.',
-        data: null,
-      };
+      try {
+        user = await this.prisma.user.create({
+          data: {
+            id: userId,
+            email: `${userId}@mobile.phonerep.komunitas`,
+            password: 'mobile-vote-hash',
+            name: 'Pengguna Komunitas',
+          },
+        });
+      } catch (e) {
+        return {
+          success: false,
+          message: 'ID pengguna tidak valid atau gagal diverifikasi.',
+          data: null,
+        };
+      }
     }
 
     // 3. Cek apakah vote sebelumnya sudah ada
