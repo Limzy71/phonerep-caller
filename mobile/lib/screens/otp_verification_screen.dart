@@ -313,7 +313,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         text: 'Kami telah mengirimkan 6 digit kode keamanan via ',
                       ),
                       TextSpan(
-                        text: 'WhatsApp / SMS',
+                        text: 'WhatsApp',
                         style: GoogleFonts.outfit(
                           color: AppColors.primaryLight,
                           fontWeight: FontWeight.bold,
