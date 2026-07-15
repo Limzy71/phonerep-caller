@@ -29,3 +29,7 @@ yarn-error.log*
 **/*.salive
 **/*.keystore
 **/*.jks
+
+# File SQL sekali pakai (one-time fix/migration scripts, jangan di-push)
+fix-*.sql
+hotfix-*.sql
