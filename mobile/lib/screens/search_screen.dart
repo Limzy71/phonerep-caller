@@ -403,6 +403,206 @@ class SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  void _showTagSayaPreviewModal([String? selectedTag]) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10141D),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: const Color(0xFF20273C)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 24,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF007AFF).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF007AFF).withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.local_offer_rounded, color: Color(0xFF007AFF), size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Preview Label & Tag Saya',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Daftar penanda identitas dan reputasi nomor Anda',
+                          style: GoogleFonts.outfit(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              if (selectedTag != null && selectedTag.trim().isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161C2C),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF007AFF).withValues(alpha: 0.5)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF007AFF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '# $selectedTag',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            'Aktif • Ditampilkan',
+                            style: GoogleFonts.outfit(
+                              color: AppColors.accentGreen,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Label "#$selectedTag" saat ini aktif melekat pada profil nomor Anda (${_myPhoneNumber.isNotEmpty ? _myPhoneNumber : 'Nomor Pribadi'}). Label ini membantu pengguna lain mengenali identitas atau nama profesional Anda.',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              Text(
+                'Semua Label Pada Nomor Anda (${_allMyTagNames.length})',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (_allMyTagNames.isEmpty)
+                Text(
+                  'Belum ada label/tag yang ditambahkan pada nomor Anda.',
+                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _allMyTagNames.map((t) {
+                    final isSel = t == selectedTag;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSel ? const Color(0xFF007AFF) : const Color(0xFF1E2636),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSel ? const Color(0xFF007AFF) : const Color(0xFF2D3754),
+                        ),
+                      ),
+                      child: Text(
+                        '# $t',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showAddTagDialog();
+                  },
+                  icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                  label: Text(
+                    'Tambah Label Baru',
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF007AFF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _loadUserTagsFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final savedTags = prefs.getStringList('user_my_tags') ?? [];
@@ -2468,13 +2668,49 @@ class SearchScreenState extends State<SearchScreen> {
 
             // -------------------------------------------------------------
             // 2. TAMPILAN TAG PENGGUNA / TAG SAYA (Struktur Gambar 2 & 3)
-            Text(
-              'Tag Saya',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Tag Saya',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                if (_allMyTagNames.isNotEmpty)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showTagSayaPreviewModal(),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E2636),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2D3754)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Lihat Preview',
+                              style: GoogleFonts.outfit(
+                                color: AppColors.primaryLight,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward_rounded, color: AppColors.primaryLight, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             if (_allMyTagNames.isEmpty)
@@ -2493,21 +2729,65 @@ class SearchScreenState extends State<SearchScreen> {
               runSpacing: 10,
               children: [
                 ..._allMyTagNames.map(
-                  (t) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF007AFF),
+                  (t) => Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showTagSayaPreviewModal(t),
                       borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF007AFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '# $t',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.visibility_rounded, color: Colors.white70, size: 14),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      '# $t',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _showAddTagDialog,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E2636),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF2D3754)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add_rounded, color: AppColors.primaryLight, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Tambah Tag',
+                            style: GoogleFonts.outfit(
+                              color: AppColors.primaryLight,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -2623,7 +2903,7 @@ class SearchScreenState extends State<SearchScreen> {
                                     border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
                                   ),
                                   child: const Icon(
-                                    Icons.local_offer_rounded,
+                                    Icons.person_search_rounded,
                                     color: AppColors.primaryLight,
                                     size: 22,
                                   ),
@@ -2635,10 +2915,10 @@ class SearchScreenState extends State<SearchScreen> {
                                     children: [
                                       Text(
                                         _isMyStatsLoading
-                                            ? 'Memeriksa status...'
-                                            : (_allMyTagNames.isNotEmpty
-                                                ? '${_allMyTagNames.length} Label Penanda Nomor'
-                                                : 'Proteksi Nomor Aktif'),
+                                            ? 'Memeriksa aktivitas...'
+                                            : (_myPhoneSearchCount > 0
+                                                ? '$_myPhoneSearchCount Kali Diperiksa Orang Lain'
+                                                : 'Belum Ada Pemeriksaan Asing'),
                                         style: GoogleFonts.outfit(
                                           color: Colors.white,
                                           fontSize: 16.5,
@@ -2649,7 +2929,7 @@ class SearchScreenState extends State<SearchScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Status Identitas & Reputasi Nomor',
+                                        'Aktivitas Pemeriksaan Nomor Tidak Dikenal',
                                         style: GoogleFonts.outfit(
                                           color: AppColors.primaryLight,
                                           fontSize: 12.5,
@@ -2695,71 +2975,114 @@ class SearchScreenState extends State<SearchScreen> {
                         ],
                       ),
 
-                      // Visual Chips / Pills untuk Tag
-                      if (_allMyTagNames.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _allMyTagNames.take(5).map((tagName) {
-                            final isSpamTag = _myPhoneTags.any((t) => t.labelName == tagName && t.isSpam);
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSpamTag
-                                    ? AppColors.accentRed.withValues(alpha: 0.15)
-                                    : const Color(0xFF1E2636),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSpamTag
-                                      ? AppColors.accentRed.withValues(alpha: 0.4)
-                                      : const Color(0xFF2D3754),
+                      const SizedBox(height: 16),
+
+                      // Daftar aktivitas / log orang yang mencari nomor kita
+                      if (_myPhoneSearchCount > 0) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E2636),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF2D3754)),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
+                                child: const Icon(Icons.person_pin_circle_rounded, color: AppColors.primaryLight, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Nomor Tidak Dikenal (+62812****901)',
+                                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Memeriksa identitas & reputasi nomor Anda • Terbaru',
+                                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isSpamTag ? Icons.warning_amber_rounded : Icons.tag_rounded,
-                                    size: 15,
-                                    color: isSpamTag ? AppColors.accentRed : AppColors.primaryLight,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      tagName,
-                                      style: GoogleFonts.outfit(
-                                        color: isSpamTag ? AppColors.accentRed : Colors.white,
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
+                            ],
+                          ),
+                        ),
+                        if (_myPhoneSearchCount > 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E2636),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFF2D3754)),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppColors.accentCyan.withValues(alpha: 0.15),
+                                  child: const Icon(Icons.manage_search_rounded, color: AppColors.accentCyan, size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${_myPhoneSearchCount - 1} Pengguna Asing Lainnya',
+                                        style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Melakukan pengecekan status proteksi nomor Anda',
+                                        style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E2636),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF2D3754)),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.accentGreen.withValues(alpha: 0.15),
+                                child: const Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 20),
                               ),
-                            );
-                          }).toList()
-                            ..addAll(_allMyTagNames.length > 5
-                                ? [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1E2636),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0xFF2D3754)),
-                                      ),
-                                      child: Text(
-                                        '+${_allMyTagNames.length - 5} lainnya',
-                                        style: GoogleFonts.outfit(
-                                          color: Colors.white70,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Belum Ada Pengecekan Asing',
+                                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w600),
                                     ),
-                                  ]
-                                : []),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Belum ada orang yang tidak dikenal atau nomor asing yang mencari nomor Anda saat ini.',
+                                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
 
@@ -2783,11 +3106,9 @@ class SearchScreenState extends State<SearchScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                _allMyTagNames.isNotEmpty
-                                    ? 'Nomor Anda telah teridentifikasi dengan ${_allMyTagNames.length} label penanda. ${_myPhoneSearchCount > 0 ? 'Telah diperiksa $_myPhoneSearchCount kali oleh pengguna lain.' : 'Belum ada riwayat pemeriksaan asing.'}'
-                                    : (_myPhoneSearchCount > 0
-                                        ? 'Reputasi saat ini: ${_myPhoneTrustScore.toStringAsFixed(0)}% Aman. Telah diperiksa $_myPhoneSearchCount kali.'
-                                        : 'Belum ada aktivitas mencurigakan terhadap nomor Anda.'),
+                                _myPhoneSearchCount > 0
+                                    ? 'Sistem proteksi mencatat $_myPhoneSearchCount pemeriksaan oleh pengguna lain. Identitas spesifik dilindungi enkripsi UU PDP dan terpantau aman.'
+                                    : 'Sistem proteksi AI aktif memantau 24/7. Jika ada nomor tidak dikenal yang memeriksa Anda, riwayatnya akan muncul di sini.',
                                 style: GoogleFonts.outfit(
                                   color: Colors.white.withValues(alpha: 0.85),
                                   fontSize: 13,
