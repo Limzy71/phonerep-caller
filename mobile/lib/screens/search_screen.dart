@@ -2771,7 +2771,7 @@ class SearchScreenState extends State<SearchScreen> {
                 );
               }),
             if (_hasCallLogPermission && _hasContactPermission && _realRecentCalls.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
               Center(
                 child: TextButton.icon(
                   onPressed: _showAllCallLogsModal,
@@ -2973,22 +2973,24 @@ class SearchScreenState extends State<SearchScreen> {
                       .toList(),
                 ),
               if (_contacts.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: _showAllContactsModal,
-                    icon: Text(
-                      'Tampilkan Semua (${_contacts.length} Orang)',
-                      style: GoogleFonts.outfit(
-                        color: const Color(0xFF2B8CFF),
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w600,
+                Transform.translate(
+                  offset: const Offset(0, -8),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: _showAllContactsModal,
+                      icon: Text(
+                        'Tampilkan Semua (${_contacts.length} Orang)',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF2B8CFF),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    label: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Color(0xFF2B8CFF),
-                      size: 18,
+                      label: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Color(0xFF2B8CFF),
+                        size: 18,
+                      ),
                     ),
                   ),
                 ),
@@ -3061,22 +3063,20 @@ class SearchScreenState extends State<SearchScreen> {
                                                 : 'Belum Ada Pemeriksaan Asing'),
                                         style: GoogleFonts.outfit(
                                           color: Colors.white,
-                                          fontSize: 16.5,
+                                          fontSize: 15.5,
                                           fontWeight: FontWeight.w800,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 3),
                                       Text(
-                                        'Aktivitas Pemeriksaan Nomor Tidak Dikenal',
+                                        'Aktivitas Pencarian Nomor Anda',
                                         style: GoogleFonts.outfit(
                                           color: AppColors.primaryLight,
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
                                       ),
                                     ],
                                   ),
@@ -3210,13 +3210,13 @@ class SearchScreenState extends State<SearchScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Belum Ada Pengecekan Asing',
+                                      'Belum Ada Riwayat Pemeriksaan',
                                       style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'Belum ada orang yang tidak dikenal atau nomor asing yang mencari nomor Anda saat ini.',
-                                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.3),
+                                      'Belum ada pengguna atau nomor asing yang mencari nomor Anda dalam 365 hari terakhir.',
+                                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.35),
                                     ),
                                   ],
                                 ),
