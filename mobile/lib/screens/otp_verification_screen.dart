@@ -45,7 +45,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final res = await widget.apiService.sendOtp(widget.phone);
       if (mounted) {
-        _checkAndStartLockout(res);
+        _checkAndStartLockout(res, isSendAction: true);
         setState(() {
           _isInitializing = false;
           if (res['success'] != true && _lockoutUntil == null) {
@@ -60,7 +60,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
   }
 
-  void _checkAndStartLockout(Map<String, dynamic> response) {
+  void _checkAndStartLockout(Map<String, dynamic> response, {bool isSendAction = false}) {
     if (response['lockoutUntil'] != null) {
       final timestamp = response['lockoutUntil'] as num;
       final lockoutTime = DateTime.fromMillisecondsSinceEpoch(timestamp.toInt());
@@ -86,7 +86,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       }
     }
 
-    // Jika tidak terblokir, atur timer hitung mundur dari resendAvailableAt jika masih aktif
+    // Jika tidak terblokir, atur timer hitung mundur dari resendAvailableAt HANYA JIKA ada di respons ATAU ini adalah aksi pengiriman kode (isSendAction)
     if (response['resendAvailableAt'] != null) {
       final resendTimestamp = response['resendAvailableAt'] as num;
       final resendTime = DateTime.fromMillisecondsSinceEpoch(resendTimestamp.toInt());
@@ -95,13 +95,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       } else {
         _secondsRemaining = 0;
       }
-    } else {
+      if (_secondsRemaining > 0) {
+        _startTimer(_secondsRemaining);
+      } else {
+        _timer?.cancel();
+      }
+    } else if (isSendAction) {
       _secondsRemaining = 60;
-    }
-    if (_secondsRemaining > 0) {
-      _startTimer();
-    } else {
-      _timer?.cancel();
+      _startTimer(60);
     }
   }
 
@@ -136,10 +137,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
   }
 
-  void _startTimer() {
+  void _startTimer([int? initialSeconds]) {
     _timer?.cancel();
     setState(() {
-      _secondsRemaining = 60;
+      if (initialSeconds != null && initialSeconds > 0) {
+        _secondsRemaining = initialSeconds;
+      } else if (_secondsRemaining <= 0) {
+        _secondsRemaining = 60;
+      }
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining > 0) {
@@ -181,7 +186,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _startTimer();
       final res = await widget.apiService.sendOtp(widget.phone, isResend: true);
       if (mounted) {
-        _checkAndStartLockout(res);
+        _checkAndStartLockout(res, isSendAction: true);
         if (_lockoutUntil == null) {
           if (res['success'] == true) {
             AppToast.show(
