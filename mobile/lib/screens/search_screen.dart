@@ -488,7 +488,7 @@ class SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Untuk mendeteksi panggilan spam/penipuan secara real-time, mengidentifikasi nomor asing, dan melindungi kontak Anda dalam komunitas, aplikasi membutuhkan izin akses untuk membaca Kontak & Log Telepon Anda.',
+                'Untuk mendeteksi panggilan spam/penipuan secara real-time, mengidentifikasi nomor asing, dan memproteksi daftar kontak Anda, aplikasi membutuhkan izin akses untuk membaca Kontak & Log Telepon Anda.',
                 style: GoogleFonts.outfit(
                   color: AppColors.textSecondary,
                   fontSize: 14,
@@ -2672,7 +2672,7 @@ class SearchScreenState extends State<SearchScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Reputasi & Identitas Komunitas',
+                                    'Status Identitas & Reputasi Nomor',
                                     style: GoogleFonts.outfit(
                                       color: AppColors.primaryLight,
                                       fontSize: 12.5,
@@ -2801,7 +2801,7 @@ class SearchScreenState extends State<SearchScreen> {
                             Expanded(
                               child: Text(
                                 _allMyTagNames.isNotEmpty
-                                    ? 'Nomor Anda teridentifikasi dengan ${_allMyTagNames.length} penanda di komunitas. ${_myPhoneSearchCount > 0 ? 'Telah diperiksa $_myPhoneSearchCount kali oleh pengguna lain.' : 'Belum ada riwayat pemeriksaan dari luar.'}'
+                                    ? 'Nomor Anda telah teridentifikasi dengan ${_allMyTagNames.length} label penanda. ${_myPhoneSearchCount > 0 ? 'Telah diperiksa $_myPhoneSearchCount kali oleh pengguna lain.' : 'Belum ada riwayat pemeriksaan asing.'}'
                                     : (_myPhoneSearchCount > 0
                                         ? 'Reputasi saat ini: ${_myPhoneTrustScore.toStringAsFixed(0)}% Aman. Telah diperiksa $_myPhoneSearchCount kali.'
                                         : 'Belum ada aktivitas mencurigakan terhadap nomor Anda.'),
