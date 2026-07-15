@@ -2819,9 +2819,9 @@ class SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // =========================================================================
+  // =======================================
   // TAMPILAN SAAT TOMBOL SEARCH DIPENCET
-  // =========================================================================
+  // =======================================
   Widget _buildSearchExpandedView() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
