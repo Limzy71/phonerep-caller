@@ -1065,6 +1065,7 @@ class SearchScreenState extends State<SearchScreen> {
     try {
       final res = await widget.apiService.lookupPhoneNumber(
         cleanQuery,
+        skipIncrement: cleanQuery == _myPhoneNumber,
         hasContactAccess: _hasContactPermission,
       );
       if (mounted) {
@@ -1079,32 +1080,34 @@ class SearchScreenState extends State<SearchScreen> {
           }
           _isLoading = false;
 
-          // Tambahkan ke daftar nyata "Baru Saja Dilihat"
-          _recentlyViewed.removeWhere((item) => item['number'] == cleanQuery);
-          String name = cleanQuery;
-          if (res.data != null && res.data!.tags.isNotEmpty) {
-            name = res.data!.tags.first.labelName;
-          } else {
-            final matched = _contacts
-                .where(
-                  (c) => c.phones.any(
-                    (p) =>
-                        p.number.replaceAll(' ', '') ==
-                        cleanQuery.replaceAll(' ', ''),
-                  ),
-                )
-                .firstOrNull;
-            if (matched != null) {
-              name = _getContactName(matched);
+          // Tambahkan ke daftar nyata "Baru Saja Dilihat" (Kecuali nomor milik pengguna sendiri)
+          if (cleanQuery != _myPhoneNumber) {
+            _recentlyViewed.removeWhere((item) => item['number'] == cleanQuery);
+            String name = cleanQuery;
+            if (res.data != null && res.data!.tags.isNotEmpty) {
+              name = res.data!.tags.first.labelName;
+            } else {
+              final matched = _contacts
+                  .where(
+                    (c) => c.phones.any(
+                      (p) =>
+                          p.number.replaceAll(' ', '') ==
+                          cleanQuery.replaceAll(' ', ''),
+                    ),
+                  )
+                  .firstOrNull;
+              if (matched != null) {
+                name = _getContactName(matched);
+              }
             }
+            _recentlyViewed.insert(0, {
+              'name': name,
+              'number': cleanQuery,
+              'date': 'Baru Saja',
+              'initial': _getInitials(name),
+              'color': _getAvatarColor(name),
+            });
           }
-          _recentlyViewed.insert(0, {
-            'name': name,
-            'number': cleanQuery,
-            'date': 'Baru Saja',
-            'initial': _getInitials(name),
-            'color': _getAvatarColor(name),
-          });
         });
       }
     } catch (e) {
