@@ -156,10 +156,14 @@ class SearchScreenState extends State<SearchScreen> {
     }
 
     if (mounted) {
-      setState(() {
+      if (_myPhoneTags.isEmpty && _userTags.isEmpty && _myPhoneSearchCount == 0) {
+        setState(() {
+          _myPhoneNumber = phone.trim();
+          _isMyStatsLoading = true;
+        });
+      } else {
         _myPhoneNumber = phone.trim();
-        _isMyStatsLoading = true;
-      });
+      }
     }
 
     try {
@@ -169,8 +173,14 @@ class SearchScreenState extends State<SearchScreen> {
           _myPhoneSearchCount = res.data!.searchCount;
           _myPhoneTrustScore = res.data!.trustScore;
           _myPhoneTags = res.data!.tags;
+          for (final t in res.data!.tags) {
+            if (!_userTags.contains(t.labelName)) {
+              _userTags.add(t.labelName);
+            }
+          }
           _isMyStatsLoading = false;
         });
+        _saveUserTagsToPrefs();
       }
     } catch (_) {
       if (mounted) {
@@ -325,31 +335,34 @@ class SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              if (_myPhoneTags.isNotEmpty) ...[
+              if (_allMyTagNames.isNotEmpty) ...[
                 Text(
-                  'Label Terdeteksi (${_myPhoneTags.length})',
+                  'Label Terdeteksi (${_allMyTagNames.length})',
                   style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _myPhoneTags.map((t) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: t.isSpam ? AppColors.accentRed.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: t.isSpam ? AppColors.accentRed.withValues(alpha: 0.4) : AppColors.primaryLight.withValues(alpha: 0.4)),
-                    ),
-                    child: Text(
-                      t.labelName,
-                      style: GoogleFonts.outfit(
-                        color: t.isSpam ? AppColors.accentRed : AppColors.primaryLight,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
+                  children: _allMyTagNames.map((tagName) {
+                    final isSpamTag = _myPhoneTags.any((t) => t.labelName == tagName && t.isSpam);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSpamTag ? AppColors.accentRed.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: isSpamTag ? AppColors.accentRed.withValues(alpha: 0.4) : AppColors.primaryLight.withValues(alpha: 0.4)),
                       ),
-                    ),
-                  )).toList(),
+                      child: Text(
+                        tagName,
+                        style: GoogleFonts.outfit(
+                          color: isSpamTag ? AppColors.accentRed : AppColors.primaryLight,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -407,6 +420,17 @@ class SearchScreenState extends State<SearchScreen> {
   Future<void> _saveUserTagsToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('user_my_tags', _userTags);
+  }
+
+  List<String> get _allMyTagNames {
+    final set = <String>{};
+    for (final t in _userTags) {
+      if (t.trim().isNotEmpty) set.add(t.trim());
+    }
+    for (final t in _myPhoneTags) {
+      if (t.labelName.trim().isNotEmpty) set.add(t.labelName.trim());
+    }
+    return set.toList();
   }
 
   void _showContactAccessConsentModal() {
@@ -2463,7 +2487,7 @@ class SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            if (_userTags.isEmpty)
+            if (_allMyTagNames.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
@@ -2478,7 +2502,7 @@ class SearchScreenState extends State<SearchScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                ..._userTags.map(
+                ..._allMyTagNames.map(
                   (t) => Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -2600,8 +2624,8 @@ class SearchScreenState extends State<SearchScreen> {
                             child: Text(
                               _isMyStatsLoading
                                   ? 'Memeriksa status proteksi nomor Anda...'
-                                  : (_myPhoneTags.isNotEmpty
-                                      ? '${_myPhoneTags.length} Label Penanda Terdeteksi'
+                                  : (_allMyTagNames.isNotEmpty
+                                      ? '${_allMyTagNames.length} Label Penanda Terdeteksi'
                                       : (_myPhoneSearchCount > 0
                                           ? '$_myPhoneSearchCount aktivitas pencarian terhadap nomor Anda.'
                                           : 'Nomor Anda dalam pemantauan proteksi aktif.')),
@@ -2634,8 +2658,8 @@ class SearchScreenState extends State<SearchScreen> {
                           const SizedBox(width: 14),
                           Expanded(
                             child: Text(
-                              _myPhoneTags.isNotEmpty
-                                  ? 'Terdeteksi ${_myPhoneTags.length} nama penanda (${_myPhoneTags.take(2).map((t) => '"${t.labelName}"').join(', ')}${_myPhoneTags.length > 2 ? ', dst' : ''}) • Diperiksa $_myPhoneSearchCount kali. Tekan untuk melihat analisis detail.'
+                              _allMyTagNames.isNotEmpty
+                                  ? 'Nomor Anda telah ditandai dengan label ${_allMyTagNames.take(3).map((t) => '"$t"').join(', ')}${_allMyTagNames.length > 3 ? ', dan lainnya' : ''}. ${_myPhoneSearchCount > 0 ? 'Telah diperiksa sebanyak $_myPhoneSearchCount kali oleh pengguna lain.' : 'Belum ada riwayat pemeriksaan oleh pengguna lain.'} Tekan untuk melihat analisis detail.'
                                   : (_myPhoneSearchCount > 0
                                       ? 'Reputasi saat ini: ${_myPhoneTrustScore.toStringAsFixed(0)}% Aman. Tekan di sini untuk melihat analisis detail aktivitas pencarian dan perlindungan privasi.'
                                       : 'Belum ada aktivitas pencarian mencurigakan terhadap nomor Anda. Tekan di sini untuk memeriksa status perlindungan & jejak digital Anda.'),
