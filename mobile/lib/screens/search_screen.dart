@@ -2607,30 +2607,16 @@ class SearchScreenState extends State<SearchScreen> {
             // -------------------------------------------------------------
             Material(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
               child: InkWell(
                 onTap: _showMyPhoneProtectionModal,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1D2640), Color(0xFF131A2E)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: AppColors.primaryLight.withValues(alpha: 0.35),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    color: const Color(0xFF141926),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF20273C)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2639,56 +2625,65 @@ class SearchScreenState extends State<SearchScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
-                                ),
-                                child: const Icon(
-                                  Icons.local_offer_rounded,
-                                  color: AppColors.primaryLight,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _isMyStatsLoading
-                                        ? 'Memeriksa status...'
-                                        : (_allMyTagNames.isNotEmpty
-                                            ? '${_allMyTagNames.length} Label Penanda Nomor'
-                                            : 'Proteksi Nomor Aktif'),
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white,
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Status Identitas & Reputasi Nomor',
-                                    style: GoogleFonts.outfit(
-                                      color: AppColors.primaryLight,
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  child: const Icon(
+                                    Icons.local_offer_rounded,
+                                    color: AppColors.primaryLight,
+                                    size: 22,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _isMyStatsLoading
+                                            ? 'Memeriksa status...'
+                                            : (_allMyTagNames.isNotEmpty
+                                                ? '${_allMyTagNames.length} Label Penanda Nomor'
+                                                : 'Proteksi Nomor Aktif'),
+                                        style: GoogleFonts.outfit(
+                                          color: Colors.white,
+                                          fontSize: 16.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Status Identitas & Reputasi Nomor',
+                                        style: GoogleFonts.outfit(
+                                          color: AppColors.primaryLight,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.25),
+                              color: const Color(0xFF1E2636),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.4)),
+                              border: Border.all(color: const Color(0xFF2D3754)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -2715,7 +2710,7 @@ class SearchScreenState extends State<SearchScreen> {
 
                       // Visual Chips / Pills untuk Tag
                       if (_allMyTagNames.isNotEmpty) ...[
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 16),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -2726,12 +2721,12 @@ class SearchScreenState extends State<SearchScreen> {
                               decoration: BoxDecoration(
                                 color: isSpamTag
                                     ? AppColors.accentRed.withValues(alpha: 0.15)
-                                    : const Color(0xFF222C4A),
-                                borderRadius: BorderRadius.circular(16),
+                                    : const Color(0xFF1E2636),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: isSpamTag
                                       ? AppColors.accentRed.withValues(alpha: 0.4)
-                                      : AppColors.primaryLight.withValues(alpha: 0.4),
+                                      : const Color(0xFF2D3754),
                                 ),
                               ),
                               child: Row(
@@ -2739,7 +2734,7 @@ class SearchScreenState extends State<SearchScreen> {
                                 children: [
                                   Icon(
                                     isSpamTag ? Icons.warning_amber_rounded : Icons.tag_rounded,
-                                    size: 16,
+                                    size: 15,
                                     color: isSpamTag ? AppColors.accentRed : AppColors.primaryLight,
                                   ),
                                   const SizedBox(width: 6),
@@ -2763,8 +2758,9 @@ class SearchScreenState extends State<SearchScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(16),
+                                        color: const Color(0xFF1E2636),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: const Color(0xFF2D3754)),
                                       ),
                                       child: Text(
                                         '+${_allMyTagNames.length - 5} lainnya',
@@ -2780,15 +2776,15 @@ class SearchScreenState extends State<SearchScreen> {
                         ),
                       ],
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
 
                       // Footer Kotak Info Ringkas & Bersih
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.25),
+                          color: const Color(0xFF10141D),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                          border: Border.all(color: const Color(0xFF1E2636)),
                         ),
                         child: Row(
                           children: [
