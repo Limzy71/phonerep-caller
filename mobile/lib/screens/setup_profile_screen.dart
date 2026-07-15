@@ -21,7 +21,6 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-  String? _errorMessage;
   String? _profilePhotoPath;
 
   @override
@@ -146,11 +145,19 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
     final phone = _phoneController.text.trim();
 
     if (name.isEmpty) {
-      setState(() => _errorMessage = 'Silakan masukkan nama atau identitas Anda.');
+      AppToast.show(
+        context,
+        message: 'Silakan masukkan nama atau identitas Anda.',
+        type: ToastType.error,
+      );
       return;
     }
     if (phone.isEmpty || phone.length < 8) {
-      setState(() => _errorMessage = 'Silakan masukkan nomor telepon aktif Anda yang valid.');
+      AppToast.show(
+        context,
+        message: 'Silakan masukkan nomor telepon aktif Anda yang valid.',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -158,7 +165,6 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     // Simulasi pengiriman kode OTP via WhatsApp/SMS
@@ -428,38 +434,6 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                           ),
                         ),
                       ),
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentOrange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.accentOrange.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.warning_amber_rounded,
-                                color: AppColors.accentOrange,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: GoogleFonts.outfit(
-                                    color: AppColors.accentOrange,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
