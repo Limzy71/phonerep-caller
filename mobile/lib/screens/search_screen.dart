@@ -2716,32 +2716,39 @@ class SearchScreenState extends State<SearchScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.3)),
+                                  ),
+                                  child: const Icon(
+                                    Icons.person_search_rounded,
+                                    color: AppColors.primaryLight,
+                                    size: 22,
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.person_search_rounded,
-                                  color: AppColors.primaryLight,
-                                  size: 22,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Aktivitas Pencarian Nomor Anda',
+                                    style: GoogleFonts.outfit(
+                                      color: AppColors.primaryLight,
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Text(
-                                'Aktivitas Pencarian Nomor Anda',
-                                style: GoogleFonts.outfit(
-                                  color: AppColors.primaryLight,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
@@ -2792,7 +2799,7 @@ class SearchScreenState extends State<SearchScreen> {
                         )
                       else
                         Text(
-                          'Belum ada aktivitas pencarian dari nomor asing pada profil Anda saat ini.',
+                          'Belum ada aktivitas pencarian dari nomor asing pada nomor Anda saat ini.',
                           style: GoogleFonts.outfit(
                             color: AppColors.textSecondary,
                             fontSize: 13.5,
