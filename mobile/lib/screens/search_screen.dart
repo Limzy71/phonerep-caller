@@ -335,46 +335,172 @@ class SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              if (_allMyTagNames.isNotEmpty) ...[
-                Text(
-                  'Label Terdeteksi (${_allMyTagNames.length})',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _allMyTagNames.map((tagName) {
-                    final isSpamTag = _myPhoneTags.any((t) => t.labelName == tagName && t.isSpam);
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSpamTag ? AppColors.accentRed.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isSpamTag ? AppColors.accentRed.withValues(alpha: 0.4) : AppColors.primaryLight.withValues(alpha: 0.4)),
+              Text(
+                'Daftar Nomor yang Mencari & Tag Dari Orang Lain',
+                style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              if (_myPhoneSearchCount > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161C2C),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF222B42)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
+                            child: const Icon(Icons.person_search_rounded, color: AppColors.primaryLight, size: 18),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '+62 812-4491-XXXX',
+                                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Memeriksa nomor Anda • Terbaru',
+                                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        tagName,
-                        style: GoogleFonts.outfit(
-                          color: isSpamTag ? AppColors.accentRed : AppColors.primaryLight,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Text(
+                            'Tag yang disimpan:',
+                            style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E2636),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF2D3754)),
+                            ),
+                            child: Text(
+                              _myPhoneTags.isNotEmpty ? '# ${_myPhoneTags.first.labelName}' : '# Penelusuran Kontak',
+                              style: GoogleFonts.outfit(color: AppColors.primaryLight, fontSize: 12.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (_myPhoneSearchCount > 1)
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161C2C),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF222B42)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.accentCyan.withValues(alpha: 0.15),
+                              child: const Icon(Icons.manage_search_rounded, color: AppColors.accentCyan, size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '+62 878-9012-XXXX',
+                                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Memeriksa nomor Anda • Sebelumnya',
+                                    style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Text(
+                              'Tag yang disimpan:',
+                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E2636),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF2D3754)),
+                              ),
+                              child: Text(
+                                _myPhoneTags.length > 1 ? '# ${_myPhoneTags[1].labelName}' : '# Pengecekan Rutin',
+                                style: GoogleFonts.outfit(color: AppColors.primaryLight, fontSize: 12.5, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161C2C),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF222B42)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
+                        child: const Icon(Icons.person_search_outlined, color: AppColors.primaryLight, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Belum Ada Nomor Pencari',
+                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Belum ada orang lain yang melakukan pencarian atau menyimpan tag khusus pada nomor Anda.\n\nJika nanti ada nomor yang mencari atau menyimpan tag untuk Anda, daftarnya akan langsung muncul di sini.',
+                              style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  }).toList(),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
               ],
-              Text(
-                'Mengapa identitas pencari tidak ditampilkan?',
-                style: GoogleFonts.outfit(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Sesuai regulasi privasi & keamanan siber Undang-Undang Perlindungan Data Pribadi (UU PDP No. 27/2022), identitas spesifik pencari dienkripsi dan tidak dipublikasikan untuk mencegah risiko stalking atau pelanggaran privasi.\n\nNamun, Sistem Proteksi PhoneRep secara aktif memantau pola pencarian. Jika terdeteksi aktivitas pemindaian massal (crawling) atau pelabelan spam terhadap nomor Anda, sistem proteksi AI otomatis memblokir dan mengirimkan notifikasi peringatan.',
-                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13, height: 1.5),
-              ),
               const SizedBox(height: 24),
               Row(
                 children: [
