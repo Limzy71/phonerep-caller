@@ -321,7 +321,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         }
       },
       child: Container(
-        width: 46,
+        constraints: const BoxConstraints(maxWidth: 46, minWidth: 36),
         height: 50,
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -512,7 +512,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               builder: (context, value, _) {
                                 return Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: List.generate(6, (index) => _buildDigitBox(index)),
+                                  children: List.generate(
+                                    6,
+                                    (index) => Flexible(child: _buildDigitBox(index)),
+                                  ),
                                 );
                               },
                             ),
@@ -623,8 +626,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
                         // Countdown / Resend
                         // Countdown / Resend
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             if (_lockoutUntil != null) ...[
                               Text(
