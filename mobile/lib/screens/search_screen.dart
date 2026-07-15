@@ -929,25 +929,13 @@ class SearchScreenState extends State<SearchScreen> {
     return colors[seed.hashCode.abs() % colors.length];
   }
 
-  // Getter Panggilan Terbaru Asli dari Kontak Perangkat & Riwayat Nyata
+  // Getter Panggilan Terbaru Asli dari Riwayat Telepon Nyata HP (Call Log)
   List<Map<String, dynamic>> get _realRecentCalls {
     final List<Map<String, dynamic>> combined = [];
-    // Prioritaskan riwayat pencarian nyata pengguna jika ada
-    for (final item in _recentlyViewed) {
-      if (item['date'] != 'Dari Kontak') {
-        combined.add({
-          'name': item['name'],
-          'sub': item['number'],
-          'date': item['date'],
-          'isSpam': false,
-          'number': item['number'],
-        });
-      }
-    }
-    // Tambahkan dari riwayat panggilan nyata HP (CallLog) jika ada
+    // Prioritaskan murni dari riwayat panggilan nyata HP (CallLog)
     if (_callLogs.isNotEmpty) {
       for (final log in _callLogs) {
-        if (combined.length >= 8) break;
+        if (combined.length >= 5) break;
         final num = (log.number ?? '').trim();
         if (num.isNotEmpty && !combined.any((x) => x['number'] == num)) {
           final name = (log.name != null && log.name!.trim().isNotEmpty) ? log.name!.trim() : num;
@@ -965,9 +953,8 @@ class SearchScreenState extends State<SearchScreen> {
           });
         }
       }
-    }
-    // Lengkapi dengan kontak asli HP pengguna tanpa hardcode string/tanggal palsu
-    if (_contacts.isNotEmpty) {
+    } else if (_contacts.isNotEmpty && !_hasCallLogPermission) {
+      // Hanya tampil sebagai cadangan sementara jika izin Log Telepon belum diberikan
       for (final c in _contacts) {
         if (combined.length >= 5) break;
         final num = c.phones.first.number;
@@ -983,14 +970,14 @@ class SearchScreenState extends State<SearchScreen> {
           combined.add({
             'name': _getContactName(c),
             'sub': '$num ($cleanLabel)',
-            'date': 'Kontak HP',
+            'date': 'Log Telepon',
             'isSpam': false,
             'number': num,
           });
         }
       }
     }
-    return combined.take(5).toList();
+    return combined;
   }
 
   // Getter Kontak Cepat Asli dari Kontak Perangkat (Maksimal 5, 1 alfabet 1 kontak loncat berurutan A, B, dst)
