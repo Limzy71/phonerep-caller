@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
@@ -41,7 +42,9 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
   String _getInitials(String name) {
     if (name.trim().isEmpty) return '?';
-    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    final cleanName = name.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').trim();
+    if (cleanName.isEmpty) return '?';
+    final parts = cleanName.split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -144,10 +147,26 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
 
-    if (name.isEmpty) {
+    if (name.isEmpty || name.length < 3) {
       AppToast.show(
         context,
-        message: 'Silakan masukkan nama atau identitas Anda.',
+        message: 'Silakan masukkan nama lengkap minimal 3 karakter.',
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (RegExp(r'\d').hasMatch(name)) {
+      AppToast.show(
+        context,
+        message: 'Nama lengkap tidak boleh mengandung angka.',
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (!RegExp(r'[a-zA-Z]{2,}').hasMatch(name) || !RegExp(r"^[a-zA-Z\s\.\,\'\-]+$").hasMatch(name)) {
+      AppToast.show(
+        context,
+        message: 'Silakan masukkan nama lengkap yang valid (hanya huruf dan tanda baca nama).',
         type: ToastType.error,
       );
       return;
@@ -156,6 +175,14 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       AppToast.show(
         context,
         message: 'Silakan masukkan nomor telepon aktif Anda yang valid.',
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (RegExp(r'[a-zA-Z]').hasMatch(phone)) {
+      AppToast.show(
+        context,
+        message: 'Nomor telepon tidak boleh mengandung huruf.',
         type: ToastType.error,
       );
       return;
@@ -389,6 +416,11 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _nameController,
+                        keyboardType: TextInputType.name,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\.\,\'\-]")),
+                        ],
                         style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Contoh: Budi Santoso',
@@ -418,6 +450,9 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                       TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[\d\+\s\-]')),
+                        ],
                         style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Contoh: 081234567890',
