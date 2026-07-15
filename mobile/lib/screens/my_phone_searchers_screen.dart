@@ -173,8 +173,8 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                   icon: Icons.person_search_rounded,
                   iconBg: AppColors.primaryLight.withValues(alpha: 0.15),
                   iconColor: AppColors.primaryLight,
-                  phoneNumber: '+62 812-4491-XXXX',
-                  timeAgo: 'Memeriksa nomor Anda • Terbaru',
+                  phoneNumber: 'Pengguna Anonim (+62 812-****-****)',
+                  timeAgo: 'Memeriksa nomor Anda • Baru-baru ini',
                   externalTag: widget.myPhoneTags.isNotEmpty
                       ? widget.myPhoneTags.first.labelName
                       : 'Penelusuran Kontak',
@@ -188,7 +188,7 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                     icon: Icons.manage_search_rounded,
                     iconBg: AppColors.accentCyan.withValues(alpha: 0.15),
                     iconColor: AppColors.accentCyan,
-                    phoneNumber: '+62 878-9012-XXXX',
+                    phoneNumber: 'Pengguna Anonim (+62 878-****-****)',
                     timeAgo: 'Memeriksa nomor Anda • 2 hari lalu',
                     externalTag: widget.myPhoneTags.length > 1
                         ? widget.myPhoneTags[1].labelName
@@ -212,6 +212,15 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                   ),
                 ],
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '* Demi menjaga privasi pengguna, digit tengah nomor pencari disembunyikan.',
+            style: GoogleFonts.outfit(
+              color: AppColors.textSecondary,
+              fontSize: 11.5,
+              fontStyle: FontStyle.italic,
             ),
           ),
           const SizedBox(height: 30),
