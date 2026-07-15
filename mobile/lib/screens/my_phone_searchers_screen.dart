@@ -247,36 +247,36 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
               initials: 'SM',
               avatarColor: AppColors.primaryLight,
               profileName: 'Siska Marketing',
-              phoneNumber: '+62 812-****-7890',
+              phoneNumber: '+62 812-3456-7890',
               timeAgo: 'Memeriksa nomor Anda • 2 jam yang lalu',
-              communityTags: const ['#Rekan Kerja', '#Sales Corporate', '#Marketing Office'],
+              communityTags: const [
+                '#Rekan Kerja',
+                '#Sales Corporate',
+                '#Marketing Office',
+                '#Klien Cabang',
+                '#Mitra Proyek',
+                '#Divisi Promosi',
+                '#Staf Gudang',
+                '#PIC Vendor'
+              ],
             ),
             const SizedBox(height: 14),
             _buildSearcherItem(
               initials: 'BS',
               avatarColor: AppColors.accentCyan,
               profileName: 'Budi Santoso (Kurir JNE)',
-              phoneNumber: '+62 878-****-3312',
+              phoneNumber: '+62 878-8921-3312',
               timeAgo: 'Memeriksa nomor Anda • Kemarin, 14:20 WIB',
-              communityTags: const ['#Kurir Paket', '#JNE Express', '#Antar Barang'],
+              communityTags: const ['#Kurir Paket', '#JNE Express', '#Antar Barang', '#E-Commerce', '#Logistik'],
             ),
             const SizedBox(height: 14),
             _buildSearcherItem(
               initials: 'AP',
               avatarColor: const Color(0xFF34D399),
               profileName: 'Aditya Pratama',
-              phoneNumber: '+62 856-****-9011',
+              phoneNumber: '+62 856-4321-9011',
               timeAgo: 'Memeriksa nomor Anda • 3 hari yang lalu',
               communityTags: const ['#Mitra Bisnis', '#Klien Surabaya'],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '* Demi menjaga privasi pengguna, digit tengah nomor pencari disembunyikan.',
-              style: GoogleFonts.outfit(
-                color: AppColors.textSecondary,
-                fontSize: 11.5,
-                fontStyle: FontStyle.italic,
-              ),
             ),
           ],
           const SizedBox(height: 30),
@@ -293,6 +293,14 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
     required String timeAgo,
     required List<String> communityTags,
   }) {
+    // Jika tag lebih dari 4, tampilkan 4 teratas + tombol Lihat Semua / +X Tag Lainnya
+    const int maxVisibleTags = 4;
+    final bool hasExtraTags = communityTags.length > maxVisibleTags;
+    final List<String> visibleTags = hasExtraTags
+        ? communityTags.sublist(0, maxVisibleTags)
+        : communityTags;
+    final int extraCount = communityTags.length - maxVisibleTags;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -403,27 +411,164 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: communityTags.map((tag) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E2636),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF2D3754)),
-                ),
-                child: Text(
-                  tag,
-                  style: GoogleFonts.outfit(
-                    color: AppColors.primaryLight,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+            children: [
+              ...visibleTags.map((tag) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E2636),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF2D3754)),
+                  ),
+                  child: Text(
+                    tag,
+                    style: GoogleFonts.outfit(
+                      color: AppColors.primaryLight,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }),
+              if (hasExtraTags)
+                GestureDetector(
+                  onTap: () => _showAllTagsBottomSheet(
+                    profileName: profileName,
+                    phoneNumber: phoneNumber,
+                    allTags: communityTags,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: avatarColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: avatarColor.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '+$extraCount Tag Lainnya',
+                          style: GoogleFonts.outfit(
+                            color: avatarColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_rounded, size: 12, color: avatarColor),
+                      ],
+                    ),
                   ),
                 ),
-              );
-            }).toList(),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  void _showAllTagsBottomSheet({
+    required String profileName,
+    required String phoneNumber,
+    required List<String> allTags,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF161C2C),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Semua Tag untuk $profileName',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                phoneNumber,
+                style: GoogleFonts.outfit(
+                  color: AppColors.primaryLight,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: allTags.map((tag) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E2636),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2D3754)),
+                        ),
+                        child: Text(
+                          tag,
+                          style: GoogleFonts.outfit(
+                            color: AppColors.primaryLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'Tutup',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
