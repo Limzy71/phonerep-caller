@@ -43,10 +43,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     _startTimer();
     _otpController.addListener(_onOtpChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _focusNode.requestFocus();
       final res = await widget.apiService.sendOtp(widget.phone);
       if (mounted) {
         _checkAndStartLockout(res);
+        // Minta fokus keyboard hanya jika nomor tidak sedang diblokir
+        if (_lockoutUntil == null) {
+          _focusNode.requestFocus();
+        }
       }
     });
   }
