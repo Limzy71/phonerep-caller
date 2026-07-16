@@ -61,9 +61,9 @@ export class PhoneLookupService {
 
     // Normalisasi nomor telepon: hapus spasi dan strip, serta ubah format 08/628 menjadi standar E.164 (+628)
     let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
-    if (number.startsWith('08')) {
+    if (number.startsWith('0')) {
       number = '+62' + number.substring(1);
-    } else if (number.startsWith('628')) {
+    } else if (number.startsWith('62') && !number.startsWith('+')) {
       number = '+' + number;
     }
 
@@ -107,117 +107,73 @@ export class PhoneLookupService {
           labelName: t.labelName.replace(/^Nama:\s*/i, '').trim(),
         }));
 
+      const computedCarrier = this.detectCarrier(number);
       return {
         found: true,
         phoneNumber: number,
         message: 'Informasi nomor telepon ditemukan.',
-        data: updatedRecord,
+        data: {
+          ...updatedRecord,
+          carrier: computedCarrier,
+        },
       };
     }
 
-    // --- TRUECALLER OFFICIAL WEB SEARCH API FETCH & DYNAMIC FALLBACK ---
+    // --- CARRIER & NAME RESOLUTION ---
     let actualName = 'Nomor Tidak Dikenal';
     let carrier = 'Unknown Carrier';
     let countryCode = 'ID';
 
-    // 1. Coba ambil data dari Truecaller Official Search API (v2 / truecallerjs)
-    let tcData: any = null;
-    try {
-      if (process.env.TRUECALLER_TOKEN) {
-        let cleanToken = process.env.TRUECALLER_TOKEN;
-        if (cleanToken.startsWith('eyJ') && cleanToken.includes('.')) {
-          try {
-            const parsedJwt = JSON.parse(Buffer.from(cleanToken.split('.')[1], 'base64').toString());
-            if (parsedJwt && parsedJwt.token) {
-              cleanToken = parsedJwt.token;
-            }
-          } catch (e) {
-            // Abaikan kesalahan parse JWT, gunakan cleanToken apa adanya
+    // 1. Deteksi lokal dulu: jika nomor Indonesia, langsung pakai detectCarrier() tanpa hit Truecaller
+    //    Ini menghindari 429 rate-limit dari Truecaller untuk 99% kasus (nomor ID)
+    const isIndonesianNumber = number.startsWith('+62') || number.startsWith('62') || number.startsWith('0');
+    if (isIndonesianNumber) {
+      carrier = this.detectCarrier(number);
+      countryCode = 'ID';
+    } else {
+      // 2. Untuk nomor internasional, coba Truecaller — fallback ke detectCarrier jika gagal
+      let tcData: any = null;
+      try {
+        if (process.env.TRUECALLER_TOKEN) {
+          let cleanToken = process.env.TRUECALLER_TOKEN;
+          if (cleanToken.startsWith('eyJ') && cleanToken.includes('.')) {
+            try {
+              const parsedJwt = JSON.parse(Buffer.from(cleanToken.split('.')[1], 'base64').toString());
+              if (parsedJwt && parsedJwt.token) cleanToken = parsedJwt.token;
+            } catch (e) { /* abaikan */ }
+          }
+
+          const tcResponse = await truecallerjs.search({
+            number: number,
+            countryCode: 'ID',
+            installationId: cleanToken,
+          });
+
+          tcData = tcResponse.json();
+          if (tcData && tcData.data && tcData.data[0]) {
+            const contact: any = tcData.data[0];
+            if (contact.name && contact.name !== 'unknown name') actualName = contact.name;
+            if (contact.phone?.carrier) carrier = contact.phone.carrier;
+            else if (contact.phones?.[0]?.carrier) carrier = contact.phones[0].carrier;
+            if (contact.phone?.countryCode) countryCode = contact.phone.countryCode.toUpperCase();
+            else if (contact.phones?.[0]?.countryCode) countryCode = contact.phones[0].countryCode.toUpperCase();
           }
         }
-
-        // Jalankan pencarian menggunakan truecallerjs / v2 search
-        const tcResponse = await truecallerjs.search({
-          number: number,
-          countryCode: 'ID',
-          installationId: cleanToken,
-        });
-
-        tcData = tcResponse.json();
-        if (tcData && tcData.data && tcData.data[0]) {
-          const contact: any = tcData.data[0];
-          if (contact.name && contact.name !== 'unknown name') {
-            actualName = contact.name;
-          }
-          if (contact.phone && contact.phone.carrier) {
-            carrier = contact.phone.carrier;
-          } else if (contact.phones && contact.phones[0] && contact.phones[0].carrier) {
-            carrier = contact.phones[0].carrier;
-          }
-          if (contact.phone && contact.phone.countryCode) {
-            countryCode = contact.phone.countryCode.toUpperCase();
-          } else if (contact.phones && contact.phones[0] && contact.phones[0].countryCode) {
-            countryCode = contact.phones[0].countryCode.toUpperCase();
-          }
-        } else {
-          console.error("Truecaller API Error Status:", tcData?.response?.status || tcData?.status || 'Rejection');
-          console.error("Truecaller API Error Body:", JSON.stringify(tcData?.response?.data || tcData?.message || tcData));
-        }
+      } catch (err: any) {
+        // Truecaller gagal (rate limit, dll) — fallback ke deteksi lokal
       }
-    } catch (err: any) {
-      console.error("Truecaller API Error Status:", err?.response?.status || err?.status || "Exception");
-      console.error("Truecaller API Error Body:", JSON.stringify(err?.response?.data || err?.message || err));
-      // Tidak melempar error agar aplikasi tetap bisa mengembalikan detail operator & status tanpa crash
-    }
 
-    // 2. Parsing Carrier / Operator jika belum terdeteksi dari API
-    if (carrier === 'Unknown Carrier') {
-      const cleanNum = number.replace(/\s+/g, '').replace(/-/g, '');
-      if (cleanNum.startsWith('+62') || cleanNum.startsWith('62') || cleanNum.startsWith('08')) {
-        countryCode = 'ID';
-        let prefix4 = cleanNum;
-        if (prefix4.startsWith('+62')) {
-          prefix4 = '0' + prefix4.substring(3, 6);
-        } else if (prefix4.startsWith('62')) {
-          prefix4 = '0' + prefix4.substring(2, 5);
-        } else {
-          prefix4 = prefix4.substring(0, 4);
-        }
-        if (['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'].includes(prefix4)) {
-          carrier = 'Telkomsel';
-        } else if (['0817', '0818', '0819', '0859', '0877', '0878'].includes(prefix4)) {
-          carrier = 'XL Axiata';
-        } else if (['0838', '0831', '0832', '0833'].includes(prefix4)) {
-          carrier = 'AXIS (XL Axiata)';
-        } else if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix4)) {
-          carrier = 'Indosat Ooredoo Hutchison';
-        } else if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'].includes(prefix4)) {
-          carrier = 'Smartfren';
-        } else if (['0895', '0896', '0897', '0898', '0899'].includes(prefix4)) {
-          carrier = 'Tri (3 / IOH)';
-        } else {
-          const poolId = ['Telkomsel', 'XL Axiata', 'Indosat Ooredoo', 'Smartfren', 'Tri (3)'];
-          carrier = poolId[Math.floor(Math.random() * poolId.length)];
-        }
-      } else if (cleanNum.startsWith('+1')) {
-        countryCode = 'US';
-        const poolUs = ['AT&T Mobility', 'Verizon Wireless', 'T-Mobile US', 'Google Fi'];
-        carrier = poolUs[Math.floor(Math.random() * poolUs.length)];
-      } else if (cleanNum.startsWith('+44')) {
-        countryCode = 'UK';
-        const poolUk = ['EE / BT', 'Vodafone UK', 'O2 UK', 'Three UK'];
-        carrier = poolUk[Math.floor(Math.random() * poolUk.length)];
-      } else if (cleanNum.startsWith('+65')) {
-        countryCode = 'SG';
-        const poolSg = ['Singtel', 'StarHub', 'M1', 'Simba'];
-        carrier = poolSg[Math.floor(Math.random() * poolSg.length)];
-      } else if (cleanNum.startsWith('+60')) {
-        countryCode = 'MY';
-        const poolMy = ['Maxis', 'CelcomDigi', 'U Mobile', 'Unifi Mobile'];
-        carrier = poolMy[Math.floor(Math.random() * poolMy.length)];
-      } else {
-        const poolGlobal = ['Global Telecom Carrier', 'International Roaming Network', 'Satellite / VoIP Network'];
-        carrier = poolGlobal[Math.floor(Math.random() * poolGlobal.length)];
+      // Jika carrier dari Truecaller masih generik/unknown, gunakan deteksi lokal
+      if (
+        carrier === 'Unknown Carrier' ||
+        carrier.toLowerCase().includes('roaming') ||
+        carrier.toLowerCase().includes('global') ||
+        carrier.toLowerCase().includes('local providers') ||
+        carrier.toLowerCase().includes('voip') ||
+        carrier.toLowerCase().includes('satellite') ||
+        carrier.toLowerCase().includes('international')
+      ) {
+        carrier = this.detectCarrier(number);
       }
     }
 
@@ -252,8 +208,48 @@ export class PhoneLookupService {
       found: true,
       phoneNumber: number,
       message: `Reputasi nomor telepon (${actualName !== 'Nomor Tidak Dikenal' ? actualName + ' • ' : ''}${carrier} - ${countryCode}) berhasil diperbarui.`,
-      data: newRecord,
+      data: {
+        ...newRecord,
+        carrier: carrier,
+      },
     };
+  }
+
+  private detectCarrier(number: string): string {
+    const cleanNum = number.replace(/\s+/g, '').replace(/-/g, '');
+    if (cleanNum.startsWith('+62') || cleanNum.startsWith('62') || cleanNum.startsWith('0')) {
+      let normDigits = cleanNum;
+      if (normDigits.startsWith('+62')) {
+        normDigits = '0' + normDigits.substring(3);
+      } else if (normDigits.startsWith('62')) {
+        normDigits = '0' + normDigits.substring(2);
+      }
+
+      if (normDigits.startsWith('021')) return 'Telkom Indonesia (PSTN Jakarta / Jabodetabek)';
+      if (normDigits.startsWith('022')) return 'Telkom Indonesia (PSTN Bandung)';
+      if (normDigits.startsWith('031')) return 'Telkom Indonesia (PSTN Surabaya)';
+      if (normDigits.startsWith('024')) return 'Telkom Indonesia (PSTN Semarang)';
+      if (normDigits.startsWith('0274')) return 'Telkom Indonesia (PSTN Yogyakarta)';
+      if (normDigits.startsWith('061')) return 'Telkom Indonesia (PSTN Medan)';
+      if (normDigits.startsWith('0411')) return 'Telkom Indonesia (PSTN Makassar)';
+      if (normDigits.startsWith('0361')) return 'Telkom Indonesia (PSTN Bali)';
+      if (normDigits.startsWith('0778')) return 'Telkom Indonesia (PSTN Batam)';
+      if (/^0[2345679]/.test(normDigits)) return 'Telkom Indonesia (Telepon PSTN / Fixed Line)';
+
+      const prefix4 = normDigits.substring(0, 4);
+      if (['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'].includes(prefix4)) return 'Telkomsel';
+      if (['0817', '0818', '0819', '0859', '0877', '0878'].includes(prefix4)) return 'XL Axiata';
+      if (['0838', '0831', '0832', '0833'].includes(prefix4)) return 'AXIS (XL Axiata)';
+      if (['0814', '0815', '0816', '0855', '0856', '0857', '0858'].includes(prefix4)) return 'Indosat Ooredoo Hutchison';
+      if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'].includes(prefix4)) return 'Smartfren';
+      if (['0895', '0896', '0897', '0898', '0899'].includes(prefix4)) return 'Tri (3 / IOH)';
+      return 'Operator Seluler Indonesia';
+    }
+    if (cleanNum.startsWith('+1')) return 'AT&T / Verizon / T-Mobile US';
+    if (cleanNum.startsWith('+44')) return 'EE / Vodafone / O2 UK';
+    if (cleanNum.startsWith('+65')) return 'Singtel / StarHub / M1';
+    if (cleanNum.startsWith('+60')) return 'Maxis / CelcomDigi / U Mobile';
+    return 'Operator Telekomunikasi Internasional';
   }
 
 
@@ -465,9 +461,9 @@ export class PhoneLookupService {
         if (!item || !item.phoneNumber || !item.name) continue;
 
         let number = item.phoneNumber.trim().replace(/[\s\-\(\)\.]+/g, '');
-        if (number.startsWith('08')) {
+        if (number.startsWith('0')) {
           number = '+62' + number.substring(1);
-        } else if (number.startsWith('628')) {
+        } else if (number.startsWith('62') && !number.startsWith('+')) {
           number = '+' + number;
         }
 
@@ -625,9 +621,9 @@ export class PhoneLookupService {
 
   async sendOtp(rawNumber: string, isResend = false): Promise<{ success: boolean; message: string; resendAvailableAt?: number }> {
     let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
-    if (number.startsWith('08')) {
+    if (number.startsWith('0')) {
       number = '+62' + number.substring(1);
-    } else if (number.startsWith('628')) {
+    } else if (number.startsWith('62') && !number.startsWith('+')) {
       number = '+' + number;
     }
 
@@ -726,9 +722,9 @@ export class PhoneLookupService {
 
   async verifyOtp(rawNumber: string, code: string): Promise<{ success: boolean; message: string }> {
     let number = rawNumber.trim().replace(/\s+/g, '').replace(/-/g, '');
-    if (number.startsWith('08')) {
+    if (number.startsWith('0')) {
       number = '+62' + number.substring(1);
-    } else if (number.startsWith('628')) {
+    } else if (number.startsWith('62') && !number.startsWith('+')) {
       number = '+' + number;
     }
 
@@ -814,15 +810,15 @@ export class PhoneLookupService {
     let number08 = numberE164;
     let number628 = numberE164;
 
-    if (numberE164.startsWith('08')) {
+    if (numberE164.startsWith('0')) {
       numberE164 = '+62' + numberE164.substring(1);
       number08 = '0' + numberE164.substring(3);
       number628 = '62' + numberE164.substring(3);
-    } else if (numberE164.startsWith('628')) {
+    } else if (numberE164.startsWith('62') && !numberE164.startsWith('+')) {
       numberE164 = '+' + numberE164;
       number08 = '0' + numberE164.substring(3);
       number628 = '62' + numberE164.substring(3);
-    } else if (numberE164.startsWith('+628')) {
+    } else if (numberE164.startsWith('+62')) {
       number08 = '0' + numberE164.substring(3);
       number628 = '62' + numberE164.substring(3);
     }

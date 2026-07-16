@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Full-stack crowdsourced phone reputation & spam verification system using NestJS, Prisma 7, and Next.js",
   "scripts": {
-    "start:dev": "ts-node src/main.ts"
+    "start:dev": "ts-node src/main.ts",
+    "start": "node -e \"require('ts-node').register({project:'tsconfig.json'}); require('./src/main');\"",
+    "stop": "npx kill-port 3000"
   },
   "devDependencies": {
     "@types/cron": "^2.0.1",

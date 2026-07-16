@@ -70,7 +70,11 @@ class PhoneRecord {
       trustScore: json['trustScore'] is num
           ? (json['trustScore'] as num).toDouble()
           : double.tryParse(json['trustScore']?.toString() ?? '80.0') ?? 80.0,
-      carrier: json['carrier']?.toString() ?? 'Telkomsel / Seluler Indonesia',
+      carrier: (json['carrier'] != null && json['carrier'].toString().trim().isNotEmpty)
+          ? json['carrier'].toString()
+          : (json['phoneNumber']?.toString().contains('021') == true || json['phoneNumber']?.toString().contains('+6221') == true
+              ? 'Telkom Indonesia (PSTN Jakarta / Jabodetabek)'
+              : 'Jaringan Telekomunikasi Indonesia'),
       tags: rawTags
           .map((t) => TagItem.fromJson(t as Map<String, dynamic>))
           .toList(),

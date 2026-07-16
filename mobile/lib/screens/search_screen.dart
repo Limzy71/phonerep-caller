@@ -3101,18 +3101,25 @@ class SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.cell_tower_rounded,
+                      Icon(
+                        (_phoneRecord!.carrier!.contains('PSTN') ||
+                                _phoneRecord!.carrier!.contains('Fixed Line') ||
+                                _phoneRecord!.carrier!.contains('Telkom Indonesia'))
+                            ? Icons.phone_rounded
+                            : Icons.cell_tower_rounded,
                         color: AppColors.accentCyan,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Operator: ${_phoneRecord!.carrier}',
-                        style: GoogleFonts.sora(
-                          color: AppColors.accentCyan,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          'Operator: ${_phoneRecord!.carrier}',
+                          style: GoogleFonts.sora(
+                            color: AppColors.accentCyan,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
