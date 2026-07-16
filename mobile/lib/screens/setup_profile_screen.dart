@@ -174,8 +174,11 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       return;
     }
 
-    // Validasi Nama (Allow-list + Anti-Smash): Harus diawali huruf, 3-30 karakter, tanpa tanda baca berurutan, maks 4 konsonan berurutan
-    final nameRegex = RegExp(r"^(?!.*[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{5,})(?!.*[\.\']{2,})[a-zA-Z][a-zA-Z\s\.\']{2,29}$");
+    // Validasi Nama (Allow-list + Anti-Smash + Anti-Repeat): Harus diawali huruf, 3-30 karakter, maks 4 konsonan berurutan, maks 3 huruf identik berurutan
+    final nameRegex = RegExp(
+      r"^(?!.*(.)\1{3,})(?!.*[bcdfghjklmnpqrstvwxyz]{5,})(?!.*[\.\']{2,})[a-z][a-z\s\.\']{2,29}$",
+      caseSensitive: false,
+    );
     if (!nameRegex.hasMatch(name)) {
       AppToast.show(
         context,
