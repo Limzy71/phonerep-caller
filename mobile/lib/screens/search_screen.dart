@@ -1718,8 +1718,9 @@ class SearchScreenState extends State<SearchScreen> {
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          );
+        },
         );
       },
     );
