@@ -225,7 +225,7 @@ class SearchScreenState extends State<SearchScreen> {
             t.phoneNumberId,
             skipIncrement: true,
             hasContactAccess: _hasContactPermission,
-          );
+          ).timeout(const Duration(seconds: 4));
           if (mounted && res.data != null) {
             setState(() {
               _quickContactTagCounts[t.phoneNumberId] = res.data!.tags.length;
@@ -821,7 +821,7 @@ class SearchScreenState extends State<SearchScreen> {
             num,
             skipIncrement: true,
             hasContactAccess: _hasContactPermission,
-          );
+          ).timeout(const Duration(seconds: 4));
           if (mounted && res.data != null && res.data!.tags.isNotEmpty) {
             final sortedTags = List.of(res.data!.tags)
               ..sort((a, b) => (b.upvotes - b.downvotes).compareTo(a.upvotes - a.downvotes));
@@ -1030,7 +1030,11 @@ class SearchScreenState extends State<SearchScreen> {
           );
           _showQuotaExceededModal();
         } else {
-          _showAutoDismissStatus(null, error: e.toString().replaceAll('Exception: ', ''));
+          String rawErr = e.toString().replaceAll('Exception: ', '');
+          if (rawErr.contains('TimeoutException') || rawErr.contains('Future not completed')) {
+            rawErr = 'Koneksi ke server lambat atau terputus. Silakan periksa jaringan internet Anda.';
+          }
+          _showAutoDismissStatus(null, error: rawErr);
         }
       }
     }
