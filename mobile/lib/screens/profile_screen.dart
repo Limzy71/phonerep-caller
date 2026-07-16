@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -164,6 +165,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 6),
                 TextField(
                   controller: nameCtrl,
+                  keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\.\']")),
+                    LengthLimitingTextInputFormatter(50),
+                  ],
                   style: GoogleFonts.plusJakartaSans(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'Contoh: Budi Santoso',

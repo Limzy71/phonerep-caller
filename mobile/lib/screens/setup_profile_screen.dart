@@ -430,7 +430,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                         keyboardType: TextInputType.name,
                         textCapitalization: TextCapitalization.words,
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\.\,\'\-]")),
+                          FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\.\']")),
+                          LengthLimitingTextInputFormatter(50),
                         ],
                         style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
@@ -462,7 +463,8 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d\+\s\-]')),
+                          FilteringTextInputFormatter.allow(RegExp(r'[\d\+]')),
+                          LengthLimitingTextInputFormatter(15),
                         ],
                         style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
