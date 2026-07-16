@@ -169,6 +169,11 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
     // Sanitasi input nomor telepon untuk menghilangkan spasi dan strip (-)
     phone = phone.replaceAll(RegExp(r'[\s\-]+'), '');
 
+    if (name.isEmpty) {
+      AppToast.show(context, message: 'Mohon isi nama lengkap Anda.', type: ToastType.error);
+      return;
+    }
+
     // Validasi Nama (Allow-list): Harus diawali huruf, 3-30 karakter, tanpa tanda baca berurutan
     final nameRegex = RegExp(r"^(?!.*[\.\']{2,})[a-zA-Z][a-zA-Z\s\.\']{2,29}$");
     if (!nameRegex.hasMatch(name)) {
@@ -177,6 +182,11 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
         message: 'Format nama tidak sesuai standar. Gunakan nama asli tanpa angka atau simbol tidak lazim.',
         type: ToastType.error,
       );
+      return;
+    }
+
+    if (phone.isEmpty) {
+      AppToast.show(context, message: 'Mohon isi nomor telepon aktif Anda.', type: ToastType.error);
       return;
     }
 

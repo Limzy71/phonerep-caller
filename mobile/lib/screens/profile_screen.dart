@@ -220,6 +220,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final newName = nameCtrl.text.trim();
                 final newPhone = phoneCtrl.text.trim();
                 
+                if (newName.isEmpty) {
+                  AppToast.show(context, message: 'Mohon isi nama lengkap Anda.', type: ToastType.error);
+                  return;
+                }
+
                 // Validasi Nama (Allow-list): Harus diawali huruf, 3-30 karakter, tanpa tanda baca berurutan
                 final nameRegex = RegExp(r"^(?!.*[\.\']{2,})[a-zA-Z][a-zA-Z\s\.\']{2,29}$");
                 if (!nameRegex.hasMatch(newName)) {
