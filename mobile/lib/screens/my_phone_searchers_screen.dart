@@ -12,6 +12,7 @@ class MyPhoneSearchersScreen extends StatefulWidget {
   final String myPhoneNumber;
   final List<SearcherItemData>? searcherItems;
   final VoidCallback? onRefresh;
+  final Function(String)? onSearchNumber;
 
   const MyPhoneSearchersScreen({
     super.key,
@@ -21,6 +22,7 @@ class MyPhoneSearchersScreen extends StatefulWidget {
     required this.myPhoneNumber,
     this.searcherItems,
     this.onRefresh,
+    this.onSearchNumber,
   });
 
   @override
@@ -320,17 +322,27 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
         : communityTags;
     final int extraCount = communityTags.length - maxVisibleTags;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161C2C),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () {
+          if (widget.onSearchNumber != null) {
+            widget.onSearchNumber!(phoneNumber);
+          }
+        },
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF222B42)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161C2C),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF222B42)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -526,6 +538,8 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
             ],
           ),
         ],
+      ),
+    ),
       ),
     );
   }

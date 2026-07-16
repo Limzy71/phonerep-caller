@@ -2469,10 +2469,6 @@ class SearchScreenState extends State<SearchScreen> {
                 final item = entry.value;
                 final num = item['number'] as String;
                 String? topTag = _recentCallTags[num];
-                // Fallback hardcode prototype untuk demonstrasi visual jika database belum diisi tag untuk nomor ini:
-                if (topTag == null && index == 0) {
-                  topTag = '#My Telkomsel';
-                }
                 return InkWell(
                   onTap: () {
                     _searchController.text = num;
@@ -2800,6 +2796,11 @@ class SearchScreenState extends State<SearchScreen> {
                         myPhoneNumber: _myPhoneNumber,
                         searcherItems: _cachedSearcherItems,
                         onRefresh: _fetchMyPhoneSearchStats,
+                        onSearchNumber: (String number) {
+                          Navigator.pop(context); // Tutup halaman MyPhoneSearchersScreen
+                          _searchController.text = number;
+                          _performSearch(number); // Lakukan pencarian
+                        },
                       ),
                     ),
                   );
