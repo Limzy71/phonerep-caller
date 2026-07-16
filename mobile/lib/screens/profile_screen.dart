@@ -146,6 +146,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final nameCtrl = TextEditingController(text: _userName);
     final phoneCtrl = TextEditingController(text: _userPhone);
 
+    nameCtrl.addListener(() {
+      final text = nameCtrl.text;
+      if (text.isNotEmpty && RegExp(r"^[^a-zA-Z]").hasMatch(text)) {
+        nameCtrl.value = TextEditingValue(
+          text: text.replaceFirst(RegExp(r"^[^a-zA-Z]+"), ""),
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+        AppToast.show(context, message: 'Nama harus diawali dengan huruf.', type: ToastType.info);
+      }
+    });
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -169,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   textCapitalization: TextCapitalization.words,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z\s\.\']")),
-                    LengthLimitingTextInputFormatter(50),
+                    LengthLimitingTextInputFormatter(30),
                   ],
                   style: GoogleFonts.plusJakartaSans(color: Colors.white),
                   decoration: InputDecoration(
