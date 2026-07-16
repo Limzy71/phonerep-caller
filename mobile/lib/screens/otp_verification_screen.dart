@@ -271,7 +271,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           }
         }
         if (phoneId.isNotEmpty) {
-          await widget.apiService.addTag(phoneId, widget.name);
+          await widget.apiService.addTag(phoneId, widget.name, userId: widget.phone);
         }
       } catch (e) {
         debugPrint('Backend sync info: $e');

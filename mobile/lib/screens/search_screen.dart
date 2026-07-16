@@ -1278,7 +1278,7 @@ class SearchScreenState extends State<SearchScreen> {
                       }
 
                       if (phoneId.isNotEmpty) {
-                        await widget.apiService.addTag(phoneId, label);
+                        await widget.apiService.addTag(phoneId, label, userId: _myPhoneNumber);
                       }
 
                       if (mounted) {
