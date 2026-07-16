@@ -238,19 +238,19 @@ class SearchScreenState extends State<SearchScreen> {
     final list = <TagItem>[];
     final seen = <String>{};
     
+    // Prioritas: _myPhoneTags dari backend (agar tag dari server yang memiliki userId masuk lebih dulu)
+    for (final t in _myPhoneTags) {
+      if (t.labelName.trim().isNotEmpty && !seen.contains(t.labelName.trim())) {
+        seen.add(t.labelName.trim());
+        list.add(t);
+      }
+    }
+    
     // Fallback: Untuk _userTags (lokal/tanpa userId)
     for (final t in _userTags) {
       if (t.trim().isNotEmpty && !seen.contains(t.trim())) {
         seen.add(t.trim());
         list.add(TagItem(id: '', phoneNumberId: '', labelName: t.trim(), userId: null));
-      }
-    }
-    
-    // Prioritas: _myPhoneTags dari backend
-    for (final t in _myPhoneTags) {
-      if (t.labelName.trim().isNotEmpty && !seen.contains(t.labelName.trim())) {
-        seen.add(t.labelName.trim());
-        list.add(t);
       }
     }
     return list;
@@ -2310,7 +2310,7 @@ class SearchScreenState extends State<SearchScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined),
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined, apiService: widget.apiService),
                           ),
                         );
                       },
@@ -2366,7 +2366,7 @@ class SearchScreenState extends State<SearchScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined),
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined, apiService: widget.apiService),
                           ),
                         );
                       },
