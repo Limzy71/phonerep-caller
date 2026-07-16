@@ -132,7 +132,12 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
             ),
         ],
       ),
-      body: _buildSearchersList(),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: const Color(0xFF1E2636),
+        onRefresh: _handleRefresh,
+        child: _buildSearchersList(),
+      ),
     );
   }
 

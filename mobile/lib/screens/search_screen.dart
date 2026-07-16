@@ -608,6 +608,12 @@ class SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _checkAndLoadContacts() async {
+    if (mounted) {
+      setState(() => _isRefreshingCallLog = true);
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) setState(() => _isRefreshingCallLog = false);
+      });
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final bool hasAgreedContactAccess = prefs.getBool('has_agreed_contact_access') ?? false;
