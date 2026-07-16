@@ -275,7 +275,12 @@ class SearchScreenState extends State<SearchScreen> {
     for (final t in _userTags) {
       if (t.trim().isNotEmpty && !seen.contains(t.trim())) {
         seen.add(t.trim());
-        list.add(TagItem(id: '', phoneNumberId: '', labelName: t.trim(), userId: null));
+        list.add(TagItem(
+          id: '',
+          phoneNumberId: '',
+          labelName: t.trim(),
+          userId: _myPhoneNumber.isNotEmpty ? _myPhoneNumber : 'me',
+        ));
       }
     }
     return list;

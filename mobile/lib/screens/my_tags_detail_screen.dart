@@ -222,9 +222,9 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        // Jika userId dari tag sama dengan nomor pengguna saat ini,
-        // artinya ini adalah tag buatan sendiri dari buku telepon sendiri.
-        if (tag.userId != null && widget.myPhoneNumber.isNotEmpty && tag.userId == widget.myPhoneNumber) {
+        // Jika userId dari tag sama dengan nomor pengguna saat ini atau 'me',
+        // artinya ini adalah tag buatan sendiri dari profil sendiri.
+        if (tag.userId == 'me' || (tag.userId != null && widget.myPhoneNumber.isNotEmpty && tag.userId == widget.myPhoneNumber)) {
           return _SelfTagModal(savedTagLabel: tag.labelName);
         }
         
