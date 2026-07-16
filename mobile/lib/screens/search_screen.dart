@@ -1668,21 +1668,16 @@ class SearchScreenState extends State<SearchScreen> {
               return name.contains(q) || num.contains(q);
             }).toList();
 
-            return SizedBox(
-              height: MediaQuery.of(ctx).size.height * 0.52 +
-                  MediaQuery.of(ctx).viewInsets.bottom,
+            return Padding(
+              padding: MediaQuery.of(ctx).viewInsets,
               child: Container(
+                height: MediaQuery.of(ctx).size.height * 0.52,
                 decoration: const BoxDecoration(
                   color: Color(0xFF141926),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    top: 20,
-                    left: 20,
-                    right: 20,
-                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
-                  ),
+                  padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
