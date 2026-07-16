@@ -2,6 +2,7 @@ import 'package:call_log/call_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/phone_record.dart';
@@ -1676,9 +1677,51 @@ class SearchScreenState extends State<SearchScreen> {
                 // Konten Utama
                 Expanded(
                   child: _isLoading || _isContactsLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryLight,
+                      ? Shimmer.fromColors(
+                          baseColor: const Color(0xFF1E2636),
+                          highlightColor: const Color(0xFF2D3754),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Skeleton header card
+                                Container(
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                // Skeleton tag chips row
+                                Row(
+                                  children: [
+                                    Container(width: 80, height: 34, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+                                    const SizedBox(width: 8),
+                                    Container(width: 110, height: 34, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+                                    const SizedBox(width: 8),
+                                    Container(width: 70, height: 34, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                // Skeleton section title
+                                Container(width: 180, height: 18, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                                const SizedBox(height: 14),
+                                // Skeleton list items
+                                ...List.generate(3, (i) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: Container(
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                )),
+                              ],
+                            ),
                           ),
                         )
                       : _isSearchExpanded
