@@ -299,6 +299,45 @@ class ApiService extends ChangeNotifier {
     }
   }
 
+  Future<List<SearcherItemData>> getPhoneSearchers(String phoneNumber) async {
+    try {
+      final encodedNumber = Uri.encodeComponent(phoneNumber);
+      final url = Uri.parse('$_baseUrl/phone-lookup/searchers/$encodedNumber');
+      final response = await http.get(
+        url,
+        headers: _defaultHeaders,
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        if (decoded['success'] == true && decoded['data'] != null) {
+          final rawList = decoded['data'] as List<dynamic>;
+          return rawList.map((item) => SearcherItemData.fromJson(item as Map<String, dynamic>)).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      if (e.toString().contains('Connection refused') || e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
+        final altUrl = _getAltUrl();
+        try {
+          final encodedNumber = Uri.encodeComponent(phoneNumber);
+          final retryUri = Uri.parse('$altUrl/phone-lookup/searchers/$encodedNumber');
+          final retryRes = await http.get(retryUri, headers: _defaultHeaders).timeout(const Duration(seconds: 10));
+          if (retryRes.statusCode == 200 || retryRes.statusCode == 201) {
+            _baseUrl = altUrl;
+            notifyListeners();
+            final decoded = jsonDecode(retryRes.body) as Map<String, dynamic>;
+            if (decoded['success'] == true && decoded['data'] != null) {
+              final rawList = decoded['data'] as List<dynamic>;
+              return rawList.map((item) => SearcherItemData.fromJson(item as Map<String, dynamic>)).toList();
+            }
+          }
+        } catch (_) {}
+      }
+      throw Exception('Gagal memuat daftar pencari: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> sendOtp(String phoneNumber, {bool isResend = false}) async {
     try {
       final url = Uri.parse('$_baseUrl/phone-lookup/send-otp');

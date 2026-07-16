@@ -63,6 +63,50 @@ export class PhoneLookupController {
     );
   }
 
+  @Get('searchers/:number')
+  async getSearchers(
+    @Param('number') number: string,
+    @Query('limit') limit?: string,
+  ) {
+    // 1. Cari dulu ID dari nomor telepon ini
+    const phoneRecord = await this.phoneLookupService['prisma'].phoneNumber.findUnique({
+      where: { phoneNumber: number.trim().replace(/\s+/g, '') },
+    });
+    
+    if (!phoneRecord) {
+      return { success: true, data: [] }; // Jika nomor belum pernah dicari sama sekali
+    }
+
+    // 2. Ambil riwayat pencari berdasarkan ID tersebut
+    const maxLimit = limit ? parseInt(limit, 10) : 100;
+    const searchers = await this.phoneLookupService.getPhoneSearchers(phoneRecord.id, maxLimit);
+    
+    // 3. Format response untuk frontend
+    // Pastikan timeAgo di-generate secara real-time berdasarkan lastSearchedAt
+    const now = new Date();
+    const formattedSearchers = searchers.map(history => {
+      const diffMs = now.getTime() - history.lastSearchedAt.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      let timeStr = 'Baru saja';
+      if (diffDays > 0) timeStr = `${diffDays} hari yang lalu`;
+      else if (diffHours > 0) timeStr = `${diffHours} jam yang lalu`;
+      else if (diffMins > 0) timeStr = `${diffMins} menit yang lalu`;
+      
+      return {
+        ...history,
+        timeAgo: `Memeriksa nomor Anda | ${timeStr}`,
+      };
+    });
+
+    return {
+      success: true,
+      data: formattedSearchers,
+    };
+  }
+
   @Delete('reset/:number')
   async resetNumberData(@Param('number') number: string) {
     return await this.phoneLookupService.resetPhoneNumberData(number);

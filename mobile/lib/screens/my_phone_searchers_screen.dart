@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/phone_record.dart';
 import '../theme/app_theme.dart';
+import '../services/api_service.dart';
 
 class MyPhoneSearchersScreen extends StatefulWidget {
   final int searchCount;
@@ -27,27 +28,56 @@ class MyPhoneSearchersScreen extends StatefulWidget {
 
 class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
   late int _searchCount;
+  List<SearcherItemData>? _dynamicItems;
+  bool _isLoading = false;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _searchCount = widget.searchCount;
+    _dynamicItems = widget.searcherItems;
+    
+    // Jika tidak ada data awal yang dipassing, tarik otomatis dari backend
+    if (_dynamicItems == null || _dynamicItems!.isEmpty) {
+      _fetchData();
+    }
   }
 
-  void _handleRefresh() {
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _apiService.getPhoneSearchers(widget.myPhoneNumber);
+      if (mounted) {
+        setState(() {
+          _dynamicItems = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    await _fetchData();
     if (widget.onRefresh != null) {
       widget.onRefresh!();
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Statistik pencarian telah diperbarui.',
-          style: GoogleFonts.outfit(color: Colors.white),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Statistik pencarian telah diperbarui.',
+            style: GoogleFonts.outfit(color: Colors.white),
+          ),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -77,11 +107,19 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-            onPressed: _handleRefresh,
-            tooltip: 'Perbarui Data',
-          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Center(
+                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+              onPressed: _handleRefresh,
+              tooltip: 'Perbarui Data',
+            ),
         ],
       ),
       body: _buildSearchersList(),
@@ -89,7 +127,11 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
   }
 
   Widget _buildSearchersList() {
-    final items = widget.searcherItems ?? [];
+    if (_isLoading && _dynamicItems == null) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
+    final items = _dynamicItems ?? [];
     final int displayCount = items.isNotEmpty ? items.length : _searchCount;
 
     return SingleChildScrollView(
