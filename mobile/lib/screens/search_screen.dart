@@ -1058,7 +1058,7 @@ class SearchScreenState extends State<SearchScreen> {
 
   Future<void> _handleVote(TagItem tag, String voteType) async {
     try {
-      final success = await widget.apiService.voteTag(tag.id, voteType);
+      final success = await widget.apiService.voteTag(tag.id, voteType, userId: _myPhoneNumber.isNotEmpty ? _myPhoneNumber : null);
       if (success && mounted) {
         AppToast.show(
           context,

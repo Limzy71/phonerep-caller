@@ -264,7 +264,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         } else {
           await widget.apiService.syncContacts([
             {'name': widget.name, 'phoneNumber': widget.phone}
-          ]);
+          ], userId: widget.phone);
           final lookupAfter = await widget.apiService.lookupPhoneNumber(widget.phone, skipIncrement: true);
           if (lookupAfter.found && lookupAfter.data != null) {
             phoneId = lookupAfter.data!.id;
