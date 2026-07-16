@@ -8,6 +8,7 @@ class MyPhoneSearchersScreen extends StatefulWidget {
   final double trustScore;
   final List<TagItem> myPhoneTags;
   final String myPhoneNumber;
+  final List<SearcherItemData>? searcherItems;
   final VoidCallback? onRefresh;
 
   const MyPhoneSearchersScreen({
@@ -16,6 +17,7 @@ class MyPhoneSearchersScreen extends StatefulWidget {
     required this.trustScore,
     required this.myPhoneTags,
     required this.myPhoneNumber,
+    this.searcherItems,
     this.onRefresh,
   });
 
@@ -86,67 +88,16 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: const Color(0xFF161C2C),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF222B42), width: 1.5),
-              ),
-              child: const Icon(
-                Icons.person_search_outlined,
-                color: Color(0xFF007AFF),
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Belum Ada Riwayat Pemeriksaan',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Belum ada orang atau nomor asing yang mencari nomor Anda.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
-                color: AppColors.textSecondary,
-                fontSize: 14.5,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSearchersList() {
-    // TODO(USER-REVIEW): Flag sementara (hardcode preview) agar USER bisa me-review desain card daftar pencari nomor.
-    // Jika sudah pas & disetujui, ubah isPreviewingHardcode menjadi false untuk menggunakan data dinamis database.
-    const bool isPreviewingHardcode = true;
-    // ignore: dead_code
-    final int displayCount = isPreviewingHardcode ? 3 : _searchCount;
+    final items = widget.searcherItems ?? [];
+    final int displayCount = items.isNotEmpty ? items.length : _searchCount;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ignore: dead_code
-          if (displayCount == 0 && !isPreviewingHardcode) ...[
+          if (items.isEmpty) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -245,41 +196,21 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildSearcherItem(
-              initials: 'SM',
-              avatarColor: AppColors.primaryLight,
-              profileName: 'Siska Marketing',
-              phoneNumber: '+62 812-3456-7890',
-              timeAgo: 'Memeriksa nomor Anda | 2 jam yang lalu',
-              communityTags: const [
-                '#Rekan Kerja',
-                '#Sales Corporate',
-                '#Marketing Office',
-                '#Klien Cabang',
-                '#Mitra Proyek',
-                '#Divisi Promosi',
-                '#Staf Gudang',
-                '#PIC Vendor'
-              ],
-            ),
-            const SizedBox(height: 14),
-            _buildSearcherItem(
-              initials: 'BS',
-              avatarColor: AppColors.accentCyan,
-              profileName: 'Budi Santoso (Kurir JNE)',
-              phoneNumber: '+62 878-8921-3312',
-              timeAgo: 'Memeriksa nomor Anda | Kemarin, 14:20 WIB',
-              communityTags: const ['#Kurir Paket', '#JNE Express', '#Antar Barang', '#E-Commerce', '#Logistik'],
-            ),
-            const SizedBox(height: 14),
-            _buildSearcherItem(
-              initials: 'AP',
-              avatarColor: const Color(0xFF34D399),
-              profileName: 'Aditya Pratama',
-              phoneNumber: '+62 856-4321-9011',
-              timeAgo: 'Memeriksa nomor Anda | 3 hari yang lalu',
-              communityTags: const ['#Mitra Bisnis', '#Klien Surabaya'],
-            ),
+            ...items.map((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildSearcherItem(
+                  initials: item.initials,
+                  avatarColor: AppColors.primaryLight,
+                  profileName: item.profileName,
+                  phoneNumber: item.phoneNumber,
+                  timeAgo: item.timeAgo,
+                  checkCount: item.checkCount,
+                  avatarUrl: item.avatarUrl,
+                  communityTags: item.communityTags,
+                ),
+              );
+            }),
           ],
           const SizedBox(height: 30),
         ],
@@ -293,6 +224,8 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
     required String profileName,
     required String phoneNumber,
     required String timeAgo,
+    int? checkCount,
+    String? avatarUrl,
     required List<String> communityTags,
   }) {
     // Jika tag lebih dari 4, tampilkan 4 teratas + tombol Lihat Semua / +X Tag Lainnya
@@ -326,14 +259,31 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                   shape: BoxShape.circle,
                   border: Border.all(color: avatarColor.withValues(alpha: 0.4)),
                 ),
-                child: Text(
-                  initials,
-                  style: GoogleFonts.outfit(
-                    color: avatarColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                child: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          avatarUrl,
+                          width: 46,
+                          height: 46,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            initials,
+                            style: GoogleFonts.outfit(
+                              color: avatarColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        initials,
+                        style: GoogleFonts.outfit(
+                          color: avatarColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -370,7 +320,7 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.phone_android_rounded, size: 14, color: avatarColor),
@@ -383,9 +333,35 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        if (checkCount != null && checkCount > 1) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF43F5E).withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFF43F5E).withValues(alpha: 0.5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.local_fire_department_rounded, size: 11, color: Color(0xFFF43F5E)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${checkCount}x Dicek',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFFF43F5E),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       timeAgo,
                       style: GoogleFonts.outfit(
@@ -475,30 +451,51 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
     required String phoneNumber,
     required List<String> allTags,
   }) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF161C2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return _AllTagsBottomSheetContent(
+    if (allTags.length <= 15) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF161C2C),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          return SafeArea(
+            child: _AllTagsBottomSheetContent(
               profileName: profileName,
               phoneNumber: phoneNumber,
               allTags: allTags,
-              scrollController: scrollController,
-            );
-          },
-        );
-      },
-    );
+              scrollController: null,
+            ),
+          );
+        },
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF161C2C),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return _AllTagsBottomSheetContent(
+                profileName: profileName,
+                phoneNumber: phoneNumber,
+                allTags: allTags,
+                scrollController: scrollController,
+              );
+            },
+          );
+        },
+      );
+    }
   }
 }
 
@@ -506,7 +503,7 @@ class _AllTagsBottomSheetContent extends StatefulWidget {
   final String profileName;
   final String phoneNumber;
   final List<String> allTags;
-  final ScrollController scrollController;
+  final ScrollController? scrollController;
 
   const _AllTagsBottomSheetContent({
     required this.profileName,
@@ -550,6 +547,70 @@ class _AllTagsBottomSheetContentState extends State<_AllTagsBottomSheetContent> 
     });
   }
 
+  Widget _buildTagsContent(List<String> displayedTags, int totalCount, int currentLimit, bool hasMore) {
+    if (displayedTags.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          child: Text(
+            'Tag "${_searchController.text}" tidak ditemukan.',
+            style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: displayedTags.map((tag) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E2636),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2D3754)),
+              ),
+              child: Text(
+                tag,
+                style: GoogleFonts.outfit(
+                  color: AppColors.primaryLight,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        if (hasMore) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _displayLimit += 50;
+                });
+              },
+              icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryLight, size: 18),
+              label: Text(
+                'Muat Lebih Banyak (${totalCount - currentLimit} tag tersisa)',
+                style: GoogleFonts.outfit(
+                  color: AppColors.primaryLight,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final int totalCount = _filteredTags.length;
@@ -566,6 +627,7 @@ class _AllTagsBottomSheetContentState extends State<_AllTagsBottomSheetContent> 
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Center(
             child: Container(
@@ -647,64 +709,20 @@ class _AllTagsBottomSheetContentState extends State<_AllTagsBottomSheetContent> 
           ],
           Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
           const SizedBox(height: 14),
-          Expanded(
-            child: displayedTags.isEmpty
-                ? Center(
-                    child: Text(
-                      'Tag "$_searchController" tidak ditemukan.',
-                      style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
-                    ),
-                  )
-                : ListView(
+          widget.scrollController == null
+              ? Flexible(
+                  child: SingleChildScrollView(
+                    child: _buildTagsContent(displayedTags, totalCount, currentLimit, hasMore),
+                  ),
+                )
+              : Expanded(
+                  child: ListView(
                     controller: widget.scrollController,
                     children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: displayedTags.map((tag) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E2636),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFF2D3754)),
-                            ),
-                            child: Text(
-                              tag,
-                              style: GoogleFonts.outfit(
-                                color: AppColors.primaryLight,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      if (hasMore) ...[
-                        const SizedBox(height: 20),
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _displayLimit += 50;
-                              });
-                            },
-                            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryLight, size: 18),
-                            label: Text(
-                              'Muat Lebih Banyak (${totalCount - currentLimit} tag tersisa)',
-                              style: GoogleFonts.outfit(
-                                color: AppColors.primaryLight,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+                      _buildTagsContent(displayedTags, totalCount, currentLimit, hasMore),
                     ],
                   ),
-          ),
+                ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

@@ -151,3 +151,45 @@ class AnalyticsResponse {
     );
   }
 }
+
+class SearcherItemData {
+  final String profileName;
+  final String phoneNumber;
+  final String timeAgo;
+  final int checkCount;
+  final String? avatarUrl;
+  final List<String> communityTags;
+
+  SearcherItemData({
+    required this.profileName,
+    required this.phoneNumber,
+    required this.timeAgo,
+    this.checkCount = 1,
+    this.avatarUrl,
+    required this.communityTags,
+  });
+
+  factory SearcherItemData.fromJson(Map<String, dynamic> json) {
+    final searcherUser = json['searcherUser'] as Map<String, dynamic>?;
+    final rawTags = searcherUser?['tags'] as List<dynamic>? ?? [];
+    return SearcherItemData(
+      profileName: searcherUser?['name']?.toString() ?? 'Pengguna Anonim',
+      phoneNumber: json['phoneNumber']?.toString() ?? 'Nomor Rahasia',
+      timeAgo: json['timeAgo']?.toString() ?? 'Baru saja',
+      checkCount: json['searchCount'] is int
+          ? json['searchCount']
+          : int.tryParse(json['searchCount']?.toString() ?? '1') ?? 1,
+      avatarUrl: searcherUser?['avatarUrl']?.toString(),
+      communityTags: rawTags.map((t) => t['labelName']?.toString().startsWith('#') == true ? t['labelName'].toString() : '#${t['labelName']}').toList(),
+    );
+  }
+
+  String get initials {
+    if (profileName.isEmpty) return '??';
+    final parts = profileName.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return profileName.substring(0, profileName.length >= 2 ? 2 : 1).toUpperCase();
+  }
+}
