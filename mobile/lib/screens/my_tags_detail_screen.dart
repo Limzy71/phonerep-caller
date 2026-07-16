@@ -63,7 +63,7 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
         ),
         title: Text(
           'Detail Tag Saya',
-          style: GoogleFonts.outfit(
+          style: GoogleFonts.sora(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -90,7 +90,7 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
                   Expanded(
                     child: Text(
                       'Ini adalah daftar tag yang tersimpan untuk nomor Anda. Tekan tag untuk melihat profil penyimpan.',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.plusJakartaSans(
                         color: AppColors.primaryLight.withValues(alpha: 0.9),
                         fontSize: 13.5,
                         height: 1.4,
@@ -113,10 +113,10 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: _filterTags,
-                style: GoogleFonts.outfit(color: Colors.white, fontSize: 15),
+                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 15),
                 decoration: InputDecoration(
                   hintText: 'Cari tag...',
-                  hintStyle: GoogleFonts.outfit(
+                  hintStyle: GoogleFonts.plusJakartaSans(
                     color: AppColors.textSecondary,
                     fontSize: 15,
                   ),
@@ -149,7 +149,7 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
                           _searchController.text.isEmpty
                               ? 'Belum ada tag yang disimpan.'
                               : 'Tidak menemukan tag "${_searchController.text}"',
-                          style: GoogleFonts.outfit(
+                          style: GoogleFonts.plusJakartaSans(
                             color: AppColors.textSecondary,
                             fontSize: 15,
                           ),
@@ -193,7 +193,7 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
                                 Expanded(
                                   child: Text(
                                     tag.labelName,
-                                    style: GoogleFonts.outfit(
+                                    style: GoogleFonts.plusJakartaSans(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -218,11 +218,15 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        if (tag.userId == null || tag.userId!.trim().isEmpty) {
-          return _AnonymousSaverModal();
+        // PREVIEW HARDCODE UI: 
+        // 1. Jika menekan 'Ikhsan', simulasikan bahwa ini adalah Tag dari Profil Sendiri.
+        if (tag.labelName.toLowerCase() == 'ikhsan') {
+          return _SelfTagModal(savedTagLabel: tag.labelName);
         }
+        
+        // 2. Jika menekan tag lain, simulasikan sebagai tag yang di-save orang lain.
         return _SaverProfileModal(
-          saverNumber: tag.userId!,
+          saverNumber: '+62 812-3456-7890',
           savedTagLabel: tag.labelName,
           apiService: widget.apiService,
         );
@@ -258,25 +262,28 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
   }
 
   Future<void> _fetchProfile() async {
-    try {
-      final response = await widget.apiService.lookupPhoneNumber(widget.saverNumber);
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          if (response.found && response.data != null) {
-            _record = response.data;
-          } else {
-            _errorMessage = 'Profil tidak ditemukan.';
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Gagal memuat profil.';
-        });
-      }
+    // PREVIEW HARDCODE UI: Menyimulasikan response API dan mengirim list tag dengan kemiripan
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _record = PhoneRecord(
+          id: 'mock_id',
+          phoneNumber: widget.saverNumber,
+          countryCode: 'ID',
+          searchCount: 1,
+          trustScore: 100.0,
+          carrier: 'Telkomsel',
+          tags: [
+            TagItem(id: '1', phoneNumberId: 'mock', labelName: 'Ikhsan Dev', upvotes: 10),
+            TagItem(id: '2', phoneNumberId: 'mock', labelName: 'Ikhsan Dev BDG', upvotes: 9), // Harus terfilter oleh logika similarity
+            TagItem(id: '3', phoneNumberId: 'mock', labelName: 'Rekan Kerja', upvotes: 8),
+            TagItem(id: '4', phoneNumberId: 'mock', labelName: 'Teman Kampus', upvotes: 7),
+            TagItem(id: '5', phoneNumberId: 'mock', labelName: 'Keluarga', upvotes: 6),
+            TagItem(id: '6', phoneNumberId: 'mock', labelName: 'Tukang Servis', upvotes: 5),
+          ],
+        );
+      });
     }
   }
 
@@ -353,7 +360,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
                 padding: const EdgeInsets.all(32),
                 child: Text(
                   _errorMessage,
-                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 15),
+                  style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 15),
                 ),
               ),
             )
@@ -368,7 +375,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
               ),
               child: RichText(
                 text: TextSpan(
-                  style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14, height: 1.4),
+                  style: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 14, height: 1.4),
                   children: [
                     const TextSpan(text: 'Pengguna ini menyimpan nomor Anda dengan tag '),
                     TextSpan(
@@ -396,7 +403,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
                     children: [
                       Text(
                         widget.saverNumber,
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.sora(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -405,7 +412,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
                       const SizedBox(height: 4),
                       Text(
                         _record?.carrier ?? 'Unknown Carrier',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.plusJakartaSans(
                           color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
@@ -418,7 +425,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
             const SizedBox(height: 24),
             Text(
               'Tag yang melekat pada profil ini:',
-              style: GoogleFonts.outfit(
+              style: GoogleFonts.sora(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -428,7 +435,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
             if (_record!.tags.isEmpty)
               Text(
                 'Belum ada tag yang tersimpan.',
-                style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14),
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 14),
               )
             else
               Wrap(
@@ -444,7 +451,7 @@ class _SaverProfileModalState extends State<_SaverProfileModal> {
                     ),
                     child: Text(
                       '# ${t.labelName}',
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.plusJakartaSans(
                         color: Colors.white,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
@@ -497,9 +504,9 @@ class _AnonymousSaverModal extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Pengguna Anonim', style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('Pengguna Anonim', style: GoogleFonts.sora(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text('Informasi Dilindungi', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14)),
+                    Text('Informasi Dilindungi', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 14)),
                   ],
                 ),
               ),
@@ -515,7 +522,85 @@ class _AnonymousSaverModal extends StatelessWidget {
             ),
             child: Text(
               'Identitas penyimpan tag ini dilindungi oleh pengaturan privasi atau bersumber dari sinkronisasi kontak lokal. Detail profil tidak dapat ditampilkan.',
-              style: GoogleFonts.outfit(color: AppColors.textSecondary, height: 1.4, fontSize: 14),
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, height: 1.4, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelfTagModal extends StatelessWidget {
+  final String savedTagLabel;
+
+  const _SelfTagModal({required this.savedTagLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10141D),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: const Color(0xFF20273C)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 44,
+              height: 4.5,
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_user_rounded, color: AppColors.primaryLight, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tag Profil Anda', style: GoogleFonts.sora(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('Dikelola oleh Anda', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2636),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF2D3754)),
+            ),
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, height: 1.4, fontSize: 14),
+                children: [
+                  const TextSpan(text: 'Anda menyematkan tag '),
+                  TextSpan(
+                    text: '#$savedTagLabel',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const TextSpan(text: ' pada profil Anda sendiri. Tag ini membantu pengguna lain untuk mengenali Anda dengan lebih mudah.'),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
