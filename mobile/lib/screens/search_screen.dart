@@ -263,22 +263,34 @@ class SearchScreenState extends State<SearchScreen> {
     final list = <TagItem>[];
     final seen = <String>{};
     
-    // Prioritas: _myPhoneTags dari backend (agar tag dari server yang memiliki userId masuk lebih dulu)
+    // Prioritas: _myPhoneTags dari backend (pastikan tag profil pengguna ditandai sebagai self-tag)
     for (final t in _myPhoneTags) {
-      if (t.labelName.trim().isNotEmpty && !seen.contains(t.labelName.trim())) {
-        seen.add(t.labelName.trim());
-        list.add(t);
+      final cleanLabel = t.labelName.trim();
+      if (cleanLabel.isNotEmpty && !seen.contains(cleanLabel)) {
+        seen.add(cleanLabel);
+        final isSelfTag = _userTags.any((ut) => ut.trim().toLowerCase() == cleanLabel.toLowerCase()) ||
+            (t.userId != null && _myPhoneNumber.isNotEmpty && t.userId == _myPhoneNumber);
+        list.add(TagItem(
+          id: t.id,
+          phoneNumberId: t.phoneNumberId,
+          labelName: cleanLabel,
+          userId: isSelfTag ? (_myPhoneNumber.isNotEmpty ? _myPhoneNumber : 'me') : t.userId,
+          upvotes: t.upvotes,
+          downvotes: t.downvotes,
+          createdAt: t.createdAt,
+        ));
       }
     }
     
     // Fallback: Untuk _userTags (lokal/tanpa userId)
     for (final t in _userTags) {
-      if (t.trim().isNotEmpty && !seen.contains(t.trim())) {
-        seen.add(t.trim());
+      final cleanLabel = t.trim();
+      if (cleanLabel.isNotEmpty && !seen.contains(cleanLabel)) {
+        seen.add(cleanLabel);
         list.add(TagItem(
           id: '',
           phoneNumberId: '',
-          labelName: t.trim(),
+          labelName: cleanLabel,
           userId: _myPhoneNumber.isNotEmpty ? _myPhoneNumber : 'me',
         ));
       }
