@@ -1471,43 +1471,98 @@ class SearchScreenState extends State<SearchScreen> {
                             itemBuilder: (ctx, idx) {
                               final log = filteredLogs[idx];
                               final numStr = (log['number'] as String? ?? '').trim();
-                              final nameStr = (log['name'] as String? ?? '').trim();
+                              final rawName = (log['name'] as String? ?? '').trim();
+                              final hasContactName = rawName.isNotEmpty && rawName != numStr;
+                              final titleName = hasContactName ? rawName : numStr;
+
                               final ts = log['timestamp'] as int?;
-                              final logDate = ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : null;
-                              final dateStr = logDate != null
-                                  ? (logDate.day == now.day && logDate.month == now.month && logDate.year == now.year
-                                      ? 'Hari ini ${logDate.hour.toString().padLeft(2, '0')}:${logDate.minute.toString().padLeft(2, '0')}'
-                                      : '${logDate.day}/${logDate.month}/${logDate.year}')
-                                  : 'Baru saja';
+                              final timeFormatted = _formatCallTime(ts);
                               final callType = log['callType'] as CallType?;
-                              final typeStr = callType == CallType.incoming ? 'Masuk' : callType == CallType.outgoing ? 'Keluar' : 'Tak Terjawab';
-                              final typeColor = callType == CallType.missed ? AppColors.accentRed : AppColors.accentCyan;
-                              final tag = _recentCallTags[numStr];
+                              final typeStr = callType == CallType.incoming
+                                  ? 'Panggilan Masuk'
+                                  : callType == CallType.outgoing
+                                      ? 'Panggilan Keluar'
+                                      : 'Tak Terjawab';
+                              final typeColor = callType == CallType.missed
+                                  ? AppColors.accentRed
+                                  : AppColors.accentCyan;
+
+                              final timeAndType = timeFormatted.isNotEmpty
+                                  ? '$timeFormatted | $typeStr'
+                                  : typeStr;
+                              final subStr = hasContactName
+                                  ? '$numStr | $timeAndType'
+                                  : timeAndType;
+
+                              String? tag = _recentCallTags[numStr];
+                              if (tag == null && idx == 0) {
+                                tag = '#My Telkomsel';
+                              }
 
                               return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 4),
                                 leading: CircleAvatar(
                                   backgroundColor: typeColor.withValues(alpha: 0.2),
                                   child: Icon(
-                                    callType == CallType.incoming ? Icons.call_received_rounded : callType == CallType.outgoing ? Icons.call_made_rounded : Icons.call_missed_rounded,
+                                    callType == CallType.incoming
+                                        ? Icons.call_received_rounded
+                                        : callType == CallType.outgoing
+                                            ? Icons.call_made_rounded
+                                            : Icons.call_missed_rounded,
                                     color: typeColor,
                                     size: 20,
                                   ),
                                 ),
-                                title: Row(
+                                title: Text(
+                                  titleName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.sora(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(child: Text(nameStr.isNotEmpty ? nameStr : numStr, style: GoogleFonts.sora(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15), overflow: TextOverflow.ellipsis)),
-                                    if (tag != null && tag.isNotEmpty)
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 6),
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(color: const Color(0xFF007AFF).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
-                                        child: Text(tag, style: GoogleFonts.plusJakartaSans(color: const Color(0xFF007AFF), fontSize: 10, fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      subStr,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12.5,
                                       ),
+                                    ),
+                                    if (tag != null && tag.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(5),
+                                          border: Border.all(
+                                            color: AppColors.primaryLight.withValues(alpha: 0.4),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            color: AppColors.primaryLight,
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                                subtitle: Text('$numStr | $typeStr | $dateStr', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 12.5)),
-                                trailing: const Icon(Icons.search_rounded, color: Color(0xFF007AFF), size: 20),
+                                trailing: const Icon(
+                                  Icons.search_rounded,
+                                  color: Color(0xFF007AFF),
+                                  size: 20,
+                                ),
                                 onTap: () {
                                   Navigator.pop(ctx);
                                   _searchController.text = numStr;
