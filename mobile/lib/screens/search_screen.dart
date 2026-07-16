@@ -1376,7 +1376,7 @@ class SearchScreenState extends State<SearchScreen> {
 
             return Container(
               width: double.infinity,
-              height: MediaQuery.of(ctx).size.height * 0.8,
+              height: MediaQuery.of(ctx).size.height * 0.52,
               padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
