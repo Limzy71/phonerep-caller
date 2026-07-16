@@ -201,7 +201,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () async {
                 final newName = nameCtrl.text.trim();
                 final newPhone = phoneCtrl.text.trim();
-                if (newName.isNotEmpty && newPhone.isNotEmpty) {
+                
+                if (newName.isEmpty || newName.length < 3) {
+                  AppToast.show(context, message: 'Nama lengkap minimal 3 karakter.', type: ToastType.error);
+                  return;
+                }
+                if (RegExp(r'\d').hasMatch(newName)) {
+                  AppToast.show(context, message: 'Nama lengkap tidak boleh mengandung angka.', type: ToastType.error);
+                  return;
+                }
+                if (!RegExp(r"^[a-zA-Z\s\.\,\'\-]+$").hasMatch(newName)) {
+                  AppToast.show(context, message: 'Nama lengkap hanya boleh berisi huruf dan tanda baca lazim.', type: ToastType.error);
+                  return;
+                }
+                if (RegExp(r'[\.\,\'\-]{2,}').hasMatch(newName)) {
+                  AppToast.show(context, message: 'Nama lengkap tidak boleh mengandung tanda baca berurutan.', type: ToastType.error);
+                  return;
+                }
+
+                if (newPhone.isNotEmpty) {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setString('user_my_name', newName);
                   // Nomor telepon tidak di-update ke prefs karena readOnly (harus via pendaftaran)

@@ -174,10 +174,18 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
       );
       return;
     }
-    if (phone.isEmpty || phone.length < 8) {
+    if (RegExp(r'[\.\,\'\-]{2,}').hasMatch(name)) {
       AppToast.show(
         context,
-        message: 'Silakan masukkan nomor telepon aktif Anda yang valid.',
+        message: 'Nama lengkap tidak boleh mengandung tanda baca berurutan (contoh: \'\', ,, --).',
+        type: ToastType.error,
+      );
+      return;
+    }
+    if (phone.isEmpty || phone.length < 8 || phone.length > 15) {
+      AppToast.show(
+        context,
+        message: 'Silakan masukkan nomor telepon aktif yang valid (8-15 digit).',
         type: ToastType.error,
       );
       return;
