@@ -252,9 +252,9 @@ class _AppToastWidgetState extends State<_AppToastWidget>
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.plusJakartaSans(
                 color: Colors.white,
-                fontSize: 13.0,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                height: 1.35,
+                height: 1.4,
               ),
             ),
           ),
