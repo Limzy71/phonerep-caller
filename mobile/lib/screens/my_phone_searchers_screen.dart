@@ -39,10 +39,25 @@ class _MyPhoneSearchersScreenState extends State<MyPhoneSearchersScreen> {
     _searchCount = widget.searchCount;
     _dynamicItems = widget.searcherItems;
     
-    // Jika tidak ada data awal yang dipassing, tarik otomatis dari backend
     if (_dynamicItems == null || _dynamicItems!.isEmpty) {
+      // Tidak ada cache — tampilkan shimmer dan fetch
       _fetchData();
+    } else {
+      // Ada cache — tampilkan langsung, refresh diam-diam di background
+      _backgroundRefresh();
     }
+  }
+
+  // Refresh di background tanpa menampilkan shimmer (data lama tetap tampil)
+  Future<void> _backgroundRefresh() async {
+    try {
+      final data = await _apiService.getPhoneSearchers(widget.myPhoneNumber);
+      if (mounted) {
+        setState(() {
+          _dynamicItems = data;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchData() async {
