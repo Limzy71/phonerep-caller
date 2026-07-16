@@ -18,8 +18,9 @@ class ApiService extends ChangeNotifier {
 
   ApiService() {
     if (!kIsWeb && Platform.isAndroid) {
-      // IP Wi-Fi PC saat ini: http://192.168.100.220:3000 (juga mendukung ADB reverse via 127.0.0.1:3000)
-      _baseUrl = 'http://192.168.100.220:3000';
+      // Prioritas 1: ADB Reverse via USB (http://127.0.0.1:3000)
+      // Fallback: IP Wi-Fi PC (http://192.168.100.220:3000)
+      _baseUrl = 'http://127.0.0.1:3000';
     } else {
       _baseUrl = 'http://localhost:3000';
     }
