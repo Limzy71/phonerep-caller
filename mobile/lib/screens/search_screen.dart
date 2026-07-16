@@ -11,6 +11,7 @@ import '../widgets/tag_chip_card.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/trust_meter.dart';
 import 'my_phone_searchers_screen.dart';
+import 'my_tags_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final ApiService apiService;
@@ -212,205 +213,7 @@ class SearchScreenState extends State<SearchScreen> {
 
 
 
-  void _showTagSayaPreviewModal([String? selectedTag]) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          decoration: BoxDecoration(
-            color: const Color(0xFF10141D),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: const Color(0xFF20273C)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 24,
-                offset: const Offset(0, -8),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF007AFF).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF007AFF).withValues(alpha: 0.4)),
-                    ),
-                    child: const Icon(Icons.local_offer_rounded, color: Color(0xFF007AFF), size: 26),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Preview Label & Tag Saya',
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Daftar penanda identitas dan reputasi nomor Anda',
-                          style: GoogleFonts.outfit(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              if (selectedTag != null && selectedTag.trim().isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF161C2C),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF007AFF).withValues(alpha: 0.5)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF007AFF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '# $selectedTag',
-                              style: GoogleFonts.outfit(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            'Aktif • Ditampilkan',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.accentGreen,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Label "#$selectedTag" saat ini aktif melekat pada profil nomor Anda (${_myPhoneNumber.isNotEmpty ? _myPhoneNumber : 'Nomor Pribadi'}). Label ini membantu pengguna lain mengenali identitas atau nama profesional Anda.',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-              Text(
-                'Semua Label Pada Nomor Anda (${_allMyTagNames.length})',
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (_allMyTagNames.isEmpty)
-                Text(
-                  'Belum ada label/tag yang ditambahkan pada nomor Anda.',
-                  style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 13),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _allMyTagNames.map((t) {
-                    final isSel = t == selectedTag;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSel ? const Color(0xFF007AFF) : const Color(0xFF1E2636),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSel ? const Color(0xFF007AFF) : const Color(0xFF2D3754),
-                        ),
-                      ),
-                      child: Text(
-                        '# $t',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 13.5,
-                          fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showAddTagDialog();
-                  },
-                  icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                  label: Text(
-                    'Tambah Label Baru',
-                    style: GoogleFonts.outfit(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 
   Future<void> _loadUserTagsFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
@@ -2492,7 +2295,14 @@ class SearchScreenState extends State<SearchScreen> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => _showTagSayaPreviewModal(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagNames),
+                          ),
+                        );
+                      },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -2537,11 +2347,18 @@ class SearchScreenState extends State<SearchScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                ..._allMyTagNames.map(
+                ..._allMyTagNames.take(5).map(
                   (t) => Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => _showTagSayaPreviewModal(t),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagNames),
+                          ),
+                        );
+                      },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
