@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../models/phone_record.dart';
 
 class MyTagsDetailScreen extends StatefulWidget {
-  final List<String> allTags;
+  final List<TagItem> allTags;
 
   const MyTagsDetailScreen({
     super.key,
@@ -16,7 +17,7 @@ class MyTagsDetailScreen extends StatefulWidget {
 
 class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> _filteredTags = [];
+  List<TagItem> _filteredTags = [];
 
   @override
   void initState() {
@@ -38,7 +39,7 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
     } else {
       setState(() {
         _filteredTags = widget.allTags
-            .where((tag) => tag.toLowerCase().contains(query.toLowerCase()))
+            .where((tag) => tag.labelName.toLowerCase().contains(query.toLowerCase()))
             .toList();
       });
     }
@@ -166,13 +167,37 @@ class _MyTagsDetailScreenState extends State<MyTagsDetailScreen> {
                             ),
                             const SizedBox(width: 14),
                             Expanded(
-                              child: Text(
-                                tag,
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tag.labelName,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (tag.userId != null && tag.userId!.trim().isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Disimpan oleh: ${tag.userId}',
+                                      style: GoogleFonts.outfit(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Disimpan oleh: Pengguna Anonim',
+                                      style: GoogleFonts.outfit(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ]
+                                ],
                               ),
                             ),
                           ],

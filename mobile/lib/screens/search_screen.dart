@@ -234,15 +234,26 @@ class SearchScreenState extends State<SearchScreen> {
     await prefs.setStringList('user_my_tags', _userTags);
   }
 
-  List<String> get _allMyTagNames {
-    final set = <String>{};
+  List<TagItem> get _allMyTagsCombined {
+    final list = <TagItem>[];
+    final seen = <String>{};
+    
+    // Fallback: Untuk _userTags (lokal/tanpa userId)
     for (final t in _userTags) {
-      if (t.trim().isNotEmpty) set.add(t.trim());
+      if (t.trim().isNotEmpty && !seen.contains(t.trim())) {
+        seen.add(t.trim());
+        list.add(TagItem(id: '', phoneNumberId: '', labelName: t.trim(), userId: null));
+      }
     }
+    
+    // Prioritas: _myPhoneTags dari backend
     for (final t in _myPhoneTags) {
-      if (t.labelName.trim().isNotEmpty) set.add(t.labelName.trim());
+      if (t.labelName.trim().isNotEmpty && !seen.contains(t.labelName.trim())) {
+        seen.add(t.labelName.trim());
+        list.add(t);
+      }
     }
-    return set.toList();
+    return list;
   }
 
   void _showContactAccessConsentModal() {
@@ -2291,7 +2302,7 @@ class SearchScreenState extends State<SearchScreen> {
                     color: Colors.white,
                   ),
                 ),
-                if (_allMyTagNames.isNotEmpty)
+                if (_allMyTagsCombined.isNotEmpty)
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -2299,7 +2310,7 @@ class SearchScreenState extends State<SearchScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagNames),
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined),
                           ),
                         );
                       },
@@ -2332,7 +2343,7 @@ class SearchScreenState extends State<SearchScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_allMyTagNames.isEmpty)
+            if (_allMyTagsCombined.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
@@ -2347,7 +2358,7 @@ class SearchScreenState extends State<SearchScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                ..._allMyTagNames.take(5).map(
+                ..._allMyTagsCombined.take(5).map(
                   (t) => Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -2355,7 +2366,7 @@ class SearchScreenState extends State<SearchScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagNames),
+                            builder: (context) => MyTagsDetailScreen(allTags: _allMyTagsCombined),
                           ),
                         );
                       },
@@ -2373,7 +2384,7 @@ class SearchScreenState extends State<SearchScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '# $t',
+                              '# ${t.labelName}',
                               style: GoogleFonts.outfit(
                                 color: Colors.white,
                                 fontSize: 14,
