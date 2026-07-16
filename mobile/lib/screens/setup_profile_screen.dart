@@ -145,7 +145,10 @@ class _SetupProfileScreenState extends State<SetupProfileScreen> {
 
   Future<void> _saveAndContinue() async {
     final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    String phone = _phoneController.text.trim();
+    
+    // Sanitasi input nomor telepon untuk menghilangkan spasi dan strip (-)
+    phone = phone.replaceAll(RegExp(r'[\s\-]+'), '');
 
     if (name.isEmpty || name.length < 3) {
       AppToast.show(
