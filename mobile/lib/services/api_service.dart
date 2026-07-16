@@ -367,7 +367,7 @@ class ApiService extends ChangeNotifier {
           }
         } catch (_) {}
       }
-      return {'success': false, 'message': 'Kesalahan koneksi ke server: $e'};
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.'};
     }
   }
 
@@ -401,7 +401,7 @@ class ApiService extends ChangeNotifier {
           }
         } catch (_) {}
       }
-      return {'success': false, 'message': 'Kesalahan koneksi ke server: $e'};
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.'};
     }
   }
 }
