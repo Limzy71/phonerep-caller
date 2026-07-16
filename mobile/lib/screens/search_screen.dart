@@ -792,16 +792,19 @@ class SearchScreenState extends State<SearchScreen> {
     final yesterday = today.subtract(const Duration(days: 1));
     final callDate = DateTime(dt.year, dt.month, dt.day);
 
-    final hourStr = dt.hour.toString().padLeft(2, '0');
-    final minStr = dt.minute.toString().padLeft(2, '0');
-    final timeStr = '$hourStr.$minStr';
-
     if (callDate == today) {
-      return timeStr;
+      final hourStr = dt.hour.toString().padLeft(2, '0');
+      final minStr = dt.minute.toString().padLeft(2, '0');
+      return '$hourStr.$minStr';
     } else if (callDate == yesterday) {
-      return 'Kemarin, $timeStr';
+      return 'Kemarin';
     } else {
-      return '${dt.day}/${dt.month}, $timeStr';
+      final diffDays = today.difference(callDate).inDays;
+      if (diffDays >= 2 && diffDays <= 6) {
+        return '$diffDays hari lalu';
+      } else {
+        return '${dt.day}/${dt.month}';
+      }
     }
   }
 
@@ -1479,6 +1482,7 @@ class SearchScreenState extends State<SearchScreen> {
                               final callType = log['callType'] as CallType?;
                               final typeStr = callType == CallType.incoming ? 'Masuk' : callType == CallType.outgoing ? 'Keluar' : 'Tak Terjawab';
                               final typeColor = callType == CallType.missed ? AppColors.accentRed : AppColors.accentCyan;
+                              final tag = _recentCallTags[numStr];
 
                               return ListTile(
                                 contentPadding: const EdgeInsets.symmetric(vertical: 6),
@@ -1490,8 +1494,19 @@ class SearchScreenState extends State<SearchScreen> {
                                     size: 20,
                                   ),
                                 ),
-                                title: Text(nameStr.isNotEmpty ? nameStr : numStr, style: GoogleFonts.sora(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                                subtitle: Text('$numStr • $typeStr ($dateStr)', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 12.5)),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(nameStr.isNotEmpty ? nameStr : numStr, style: GoogleFonts.sora(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15), overflow: TextOverflow.ellipsis)),
+                                    if (tag != null && tag.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: const Color(0xFF007AFF).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
+                                        child: Text(tag, style: GoogleFonts.plusJakartaSans(color: const Color(0xFF007AFF), fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ),
+                                  ],
+                                ),
+                                subtitle: Text('$numStr | $typeStr | $dateStr', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 12.5)),
                                 trailing: const Icon(Icons.search_rounded, color: Color(0xFF007AFF), size: 20),
                                 onTap: () {
                                   Navigator.pop(ctx);
@@ -2415,19 +2430,37 @@ class SearchScreenState extends State<SearchScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text(
+                                item['name'] as String,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.sora(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: (item['isSpam'] as bool)
+                                      ? const Color(0xFFEF4444)
+                                      : Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
+                                  if (item['isSpam'] as bool) ...[
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 15,
+                                    ),
+                                    const SizedBox(width: 4),
+                                  ],
                                   Flexible(
                                     child: Text(
-                                      item['name'] as String,
+                                      item['sub'] as String,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.sora(
-                                        fontSize: 15.5,
-                                        fontWeight: FontWeight.w600,
-                                        color: (item['isSpam'] as bool)
-                                            ? const Color(0xFFEF4444)
-                                            : Colors.white,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white54,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
@@ -2453,30 +2486,6 @@ class SearchScreenState extends State<SearchScreen> {
                                       ),
                                     ),
                                   ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  if (item['isSpam'] as bool) ...[
-                                    const Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Color(0xFFEF4444),
-                                      size: 15,
-                                    ),
-                                    const SizedBox(width: 4),
-                                  ],
-                                  Expanded(
-                                    child: Text(
-                                      item['sub'] as String,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        color: Colors.white54,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ],
