@@ -1004,15 +1004,17 @@ export class PhoneLookupService {
 
   /**
    * Helper: Mengambil daftar riwayat orang yang memeriksa nomor pengguna (maksimal 100 terbaru / paginated)
-   * Mengimplementasikan Monetisasi:
-   * - Pengguna Gratis (Opsi B): Hanya melihat riwayat pencarian dalam 24 jam terakhir.
-   * - Pengguna Premium (Opsi A): Bisa melihat seluruh riwayat pencarian hingga 60 hari (batas maksimal retention).
+   * Catatan Monetisasi (Ditangguhkan):
+   * Saat ini (Tahap Awal), semua pengguna dapat melihat riwayat 60 hari penuh.
+   * Di masa depan, buka komentar logika di bawah untuk membatasi pengguna gratis hanya melihat 24 jam.
    */
   async getPhoneSearchers(targetPhoneId: string, limit: number = 100, isPremium: boolean = false) {
     const whereClause: any = {
       targetPhoneId,
     };
 
+    /* 
+    // TODO: Aktifkan kembali saat siap monetisasi ketat
     // Jika BUKAN Premium (Gratis), batasi pencarian hanya 24 jam terakhir (Opsi B - FOMO)
     if (!isPremium) {
       const twentyFourHoursAgo = new Date();
@@ -1021,6 +1023,7 @@ export class PhoneLookupService {
         gte: twentyFourHoursAgo,
       };
     }
+    */
 
     return this.prisma.profileSearchHistory.findMany({
       where: whereClause,
