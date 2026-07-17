@@ -108,6 +108,39 @@ export class PhoneLookupService {
         }));
 
       const computedCarrier = this.detectCarrier(number);
+      let baseScore = 80.0;
+      if (computedCarrier !== 'Operator Seluler Indonesia' && computedCarrier !== 'Unknown Carrier') {
+        baseScore = 82.5;
+      }
+
+      let upvotesTotal = 0;
+      let downvotesTotal = 0;
+      for (const tag of updatedRecord.tags) {
+        upvotesTotal += tag.upvotes;
+        downvotesTotal += tag.downvotes;
+      }
+      
+      let newTrustScore = baseScore + (upvotesTotal * 1.5) - (downvotesTotal * 3.5);
+      const spamTags = updatedRecord.tags.filter((t: any) => t.isSpam || t.labelName.toLowerCase().includes('penipu') || t.labelName.toLowerCase().includes('spam'));
+      for (const tag of spamTags) {
+        if (tag.upvotes >= tag.downvotes && tag.upvotes > 0) {
+          newTrustScore -= 25; 
+        }
+      }
+
+      if (newTrustScore > 100) newTrustScore = 100;
+      if (newTrustScore < 0) newTrustScore = 0;
+      newTrustScore = parseFloat(newTrustScore.toFixed(1));
+
+      if (newTrustScore !== updatedRecord.trustScore) {
+        updatedRecord.trustScore = newTrustScore;
+        // Update di background agar tidak memperlambat response
+        this.prisma.phoneNumber.update({
+          where: { id: updatedRecord.id },
+          data: { trustScore: newTrustScore },
+        }).catch(() => {});
+      }
+
       return {
         found: true,
         phoneNumber: number,
