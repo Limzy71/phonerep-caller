@@ -250,23 +250,26 @@ class SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver 
     final list = _realQuickContacts;
     if (list.isEmpty) return;
 
-    // Sequential: satu request per satu untuk menghindari beban API bersamaan
-    for (final t in list.where((t) => t.phoneNumberId.isNotEmpty)) {
-      if (!mounted) break;
-      try {
-        final res = await widget.apiService.lookupPhoneNumber(
-          t.phoneNumberId,
-          skipIncrement: true,
-          hasContactAccess: _hasContactPermission,
-        ).timeout(const Duration(seconds: 4));
-        if (mounted && res.data != null) {
-          setState(() {
-            _quickContactTagCounts[t.phoneNumberId] = res.data!.tags.length;
-          });
-        }
-      } catch (_) {}
-    }
+    // Parallel aman di sini karena jumlah kontak cepat maksimal 5 item
+    // dan semua request pakai skipIncrement: true (tidak menghitung quota)
+    await Future.wait(
+      list.where((t) => t.phoneNumberId.isNotEmpty).map((t) async {
+        try {
+          final res = await widget.apiService.lookupPhoneNumber(
+            t.phoneNumberId,
+            skipIncrement: true,
+            hasContactAccess: _hasContactPermission,
+          ).timeout(const Duration(seconds: 4));
+          if (mounted && res.data != null) {
+            setState(() {
+              _quickContactTagCounts[t.phoneNumberId] = res.data!.tags.length;
+            });
+          }
+        } catch (_) {}
+      }),
+    );
   }
+
 
 
 
