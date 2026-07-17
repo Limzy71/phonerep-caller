@@ -825,7 +825,7 @@ class _SelfTagModal extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tag ini disematkan langsung pada profil utama Anda. Pengguna lain yang menyimpan atau mencari nomor Anda akan melihat tag ini untuk mengenali identitas Anda dengan lebih cepat.',
+                  'Tag ini disematkan langsung pada profil utama Anda. Pengguna lain yang menyimpan atau mencari nomor Anda akan melihat tag ini untuk mengenali identitas Anda dengan lebih\u00A0cepat.',
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13.5,
