@@ -1106,12 +1106,14 @@ class SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver 
             type: ToastType.info,
           );
           _showQuotaExceededModal();
-        } else {
-          String rawErr = e.toString().replaceAll('Exception: ', '');
-          if (rawErr.contains('TimeoutException') || rawErr.contains('Future not completed')) {
-            rawErr = 'Koneksi ke server lambat atau terputus. Silakan periksa jaringan internet Anda.';
+          String rawErr = e.toString().toLowerCase();
+          String userMsg = 'Terjadi kesalahan tidak terduga.';
+          if (rawErr.contains('timeout') || rawErr.contains('socketexception') || rawErr.contains('connection refused') || rawErr.contains('future not completed')) {
+            userMsg = 'Koneksi ke server lambat atau terputus. Silakan periksa jaringan internet Anda.';
+          } else {
+            userMsg = e.toString().replaceAll('Exception: ', '');
           }
-          _showAutoDismissStatus(null, error: rawErr);
+          _showAutoDismissStatus(null, error: userMsg);
         }
       }
     } finally {
@@ -1138,9 +1140,17 @@ class SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver 
       }
     } catch (e) {
       if (mounted) {
+        String errorMsg = 'Terjadi kesalahan saat memberikan penilaian.';
+        final rawErr = e.toString().toLowerCase();
+        if (rawErr.contains('timeout') || rawErr.contains('socketexception') || rawErr.contains('connection refused')) {
+          errorMsg = 'Koneksi ke server terputus. Pastikan internet Anda stabil.';
+        } else {
+          errorMsg = e.toString().replaceAll('Exception: ', '');
+        }
+
         AppToast.show(
           context,
-          message: e.toString().replaceAll('Exception: ', ''),
+          message: errorMsg,
           type: ToastType.error,
         );
       }
