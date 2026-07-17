@@ -1382,9 +1382,17 @@ class SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver 
                       }
                     } catch (e) {
                       if (mounted) {
+                        String errorMsg = 'Terjadi kesalahan saat menyimpan tag.';
+                        final rawErr = e.toString().toLowerCase();
+                        if (rawErr.contains('timeout') || rawErr.contains('socketexception') || rawErr.contains('connection refused')) {
+                          errorMsg = 'Koneksi ke server terputus. Pastikan internet Anda stabil.';
+                        } else if (rawErr.contains('quota') || rawErr.contains('limit')) {
+                          errorMsg = 'Limit harian Anda telah habis.';
+                        }
+
                         AppToast.show(
                           context,
-                          message: 'Gagal menyimpan tag: ${e.toString().replaceAll('Exception: ', '')}',
+                          message: errorMsg,
                           type: ToastType.error,
                         );
                         setState(() => _isLoading = false);
