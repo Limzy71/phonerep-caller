@@ -23,7 +23,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => SearchScreenState();
 }
 
-class SearchScreenState extends State<SearchScreen> {
+class SearchScreenState extends State<SearchScreen> with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -133,9 +133,13 @@ class SearchScreenState extends State<SearchScreen> {
     _checkAndLoadContacts();
   }
 
+  // Cooldown sinkronisasi kontak saat resume — mencegah sync berulang terlalu sering
+  DateTime? _lastContactSyncTime;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserTagsFromPrefs();
     _fetchMyPhoneSearchStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -148,6 +152,24 @@ class SearchScreenState extends State<SearchScreen> {
         });
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Hanya jalankan ulang sinkronisasi jika:
+      // 1. Izin kontak sudah diberikan
+      // 2. Tidak sedang dalam proses loading
+      // 3. Sudah melewati cooldown 5 menit (mencegah sync berulang terlalu sering)
+      if (!_hasContactPermission || _isContactsLoading) return;
+      final now = DateTime.now();
+      final lastSync = _lastContactSyncTime;
+      if (lastSync == null || now.difference(lastSync).inMinutes >= 5) {
+        _lastContactSyncTime = now;
+        _fetchRealDeviceContacts();
+        _fetchMyPhoneSearchStats();
+      }
+    }
   }
 
   Future<void> _fetchMyPhoneSearchStats() async {
@@ -979,6 +1001,7 @@ class SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
