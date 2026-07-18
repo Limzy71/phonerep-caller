@@ -2,7 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { VoteType } from '../../generated/prisma/client';
-import * as truecallerjs from 'truecallerjs';
+
 import { SyncContactsDto } from './dto/sync-contacts.dto';
 
 @Injectable()
@@ -152,63 +152,19 @@ export class PhoneLookupService {
       };
     }
 
-    // --- CARRIER & NAME RESOLUTION ---
+    // --- CARRIER & NAME RESOLUTION (100% Local / Community Based) ---
     let actualName = 'Nomor Tidak Dikenal';
-    let carrier = 'Unknown Carrier';
     let countryCode = 'ID';
 
-    // 1. Deteksi lokal dulu: jika nomor Indonesia, langsung pakai detectCarrier() tanpa hit Truecaller
-    //    Ini menghindari 429 rate-limit dari Truecaller untuk 99% kasus (nomor ID)
-    const isIndonesianNumber = number.startsWith('+62') || number.startsWith('62') || number.startsWith('0');
-    if (isIndonesianNumber) {
-      carrier = this.detectCarrier(number);
-      countryCode = 'ID';
-    } else {
-      // 2. Untuk nomor internasional, coba Truecaller — fallback ke detectCarrier jika gagal
-      let tcData: any = null;
-      try {
-        if (process.env.TRUECALLER_TOKEN) {
-          let cleanToken = process.env.TRUECALLER_TOKEN;
-          if (cleanToken.startsWith('eyJ') && cleanToken.includes('.')) {
-            try {
-              const parsedJwt = JSON.parse(Buffer.from(cleanToken.split('.')[1], 'base64').toString());
-              if (parsedJwt && parsedJwt.token) cleanToken = parsedJwt.token;
-            } catch (e) { /* abaikan */ }
-          }
-
-          const tcResponse = await truecallerjs.search({
-            number: number,
-            countryCode: 'ID',
-            installationId: cleanToken,
-          });
-
-          tcData = tcResponse.json();
-          if (tcData && tcData.data && tcData.data[0]) {
-            const contact: any = tcData.data[0];
-            if (contact.name && contact.name !== 'unknown name') actualName = contact.name;
-            if (contact.phone?.carrier) carrier = contact.phone.carrier;
-            else if (contact.phones?.[0]?.carrier) carrier = contact.phones[0].carrier;
-            if (contact.phone?.countryCode) countryCode = contact.phone.countryCode.toUpperCase();
-            else if (contact.phones?.[0]?.countryCode) countryCode = contact.phones[0].countryCode.toUpperCase();
-          }
-        }
-      } catch (err: any) {
-        // Truecaller gagal (rate limit, dll) — fallback ke deteksi lokal
-      }
-
-      // Jika carrier dari Truecaller masih generik/unknown, gunakan deteksi lokal
-      if (
-        carrier === 'Unknown Carrier' ||
-        carrier.toLowerCase().includes('roaming') ||
-        carrier.toLowerCase().includes('global') ||
-        carrier.toLowerCase().includes('local providers') ||
-        carrier.toLowerCase().includes('voip') ||
-        carrier.toLowerCase().includes('satellite') ||
-        carrier.toLowerCase().includes('international')
-      ) {
-        carrier = this.detectCarrier(number);
-      }
+    if (!number.startsWith('+62') && !number.startsWith('62') && !number.startsWith('0')) {
+      if (number.startsWith('+1')) countryCode = 'US';
+      else if (number.startsWith('+44')) countryCode = 'UK';
+      else if (number.startsWith('+65')) countryCode = 'SG';
+      else if (number.startsWith('+60')) countryCode = 'MY';
+      else countryCode = 'GLOBAL';
     }
+
+    const carrier = this.detectCarrier(number);
 
     // 3. Susun tag komunitas yang asli (tanpa tag otomatis/sistem seperti 'Terverifikasi Otomatis' atau 'Operator:')
     const tagsToCreate: any[] = [];

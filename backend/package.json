@@ -30,7 +30,6 @@
     "axios": "^1.18.1",
     "cron": "^4.4.0",
     "pg": "^8.22.0",
-    "reflect-metadata": "^0.2.2",
-    "truecallerjs": "^2.2.0"
+    "reflect-metadata": "^0.2.2"
   }
 }
